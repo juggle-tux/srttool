@@ -26,6 +26,7 @@ impl<'a> From<&'a Duration> for Times {
 
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        // start time
         let sh = self.start.num_hours();
         let o = sh * 60;
         let sm = self.start.num_minutes() - o;
@@ -34,6 +35,7 @@ impl Display for Times {
         let o = o * 1000 + ss * 1000;
         let sms = self.start.num_milliseconds() - o;
 
+        // end time
         let eh = self.end.num_hours();
         let o = eh * 60;
         let em = self.end.num_minutes() - o;
@@ -41,6 +43,7 @@ impl Display for Times {
         let es = self.end.num_seconds() - o;
         let o = o * 1000 + es * 1000;
         let ems = self.end.num_milliseconds() - o;
+
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
                sh, sm, ss, sms, eh, em, es, ems)
     
@@ -86,6 +89,10 @@ impl BlockReader {
     
     pub fn err(self) -> Option<ParseError> {
         self.err
+    }
+
+    pub fn line_nr(self) -> i64 {
+        self.line
     }
 }
 

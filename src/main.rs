@@ -11,9 +11,19 @@ pub use srt::*;
 pub mod srt;
 
 // print error
+
+macro_rules! println_stderr(
+    ($($arg:tt)*) => (
+        match writeln!(&mut ::std::io::stderr(), $($arg)* ) {
+            Ok(_) => {},
+            Err(x) => panic!("Unable to write to stderr: {}", x),
+        }
+    )
+);
+
 macro_rules! printe {
-    ($arg:expr) => { println!("ERROR: {:?}", $arg) };
-    ($fmt:expr, $($arg:expr)*) => { println!(concat!("ERROR: ", $fmt), $($arg)*) };
+    ($arg:expr) => { println_stderr!("ERROR: {:?}", $arg) };
+    ($fmt:expr, $($arg:expr),*) => { println_stderr!(concat!("ERROR: ", $fmt), $($arg),*) };
 }
 
 fn main() {
@@ -41,9 +51,11 @@ fn main() {
                 i += 1;
                 print!("{}\n{}", i, b);
             }
+
             let l = r.line;
-            if let Some(e) = r.err(){
-                println!("Line {}: {:?}", l, e);
+            match r.err() {
+                None => println_stderr!("Finish after {} lines", l),
+                Some(e) => printe!("Line {}: {:?}", l, e),
             }
         }
         Err(e) => printe!(e.to_string()),
