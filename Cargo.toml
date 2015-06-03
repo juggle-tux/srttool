@@ -1,0 +1,9 @@
+[package]
+name = "srttool"
+version = "0.1.0"
+authors = ["tux <juggle-tux@users.noreply.github.com>"]
+
+
+[dependencies]
+
+clap = "*"
