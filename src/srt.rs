@@ -12,10 +12,39 @@ use std::time::duration::Duration;
 
 pub type Lines = io::Lines<BufReader<File>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Times {
     start: Duration,
     end: Duration,
+}
+
+impl<'a> From<&'a Duration> for Times {
+    fn from(d: &'a Duration) -> Times {
+        Times{start: *d, end: *d}
+    }
+}
+
+impl Display for Times {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let sh = self.start.num_hours();
+        let o = sh * 60;
+        let sm = self.start.num_minutes() - o;
+        let o = o * 60 + sm * 60;
+        let ss = self.start.num_seconds() - o;
+        let o = o * 1000 + ss * 1000;
+        let sms = self.start.num_milliseconds() - o;
+
+        let eh = self.end.num_hours();
+        let o = eh * 60;
+        let em = self.end.num_minutes() - o;
+        let o = o * 60 + em * 60;
+        let es = self.end.num_seconds() - o;
+        let o = o * 1000 + es * 1000;
+        let ems = self.end.num_milliseconds() - o;
+        write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
+               sh, sm, ss, sms, eh, em, es, ems)
+    
+    }
 }
 
 impl Add for Times {
@@ -30,57 +59,91 @@ impl Add for Times {
 }
 
 /// single subtitle block
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Block {
-    times: Times,
-    content: String,
+    pub times: Times,
+    pub content: String,
+}
+
+impl Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}\n{}\n", self.times, self.content)
+    
+    }
 }
 
 pub struct BlockReader {
     l: Lines,
+    err: Option<ParseError>,
+    pub line: i64,
 }
 
 impl BlockReader {
     //#[inline]
     pub fn new(l: Lines) -> BlockReader {
-        BlockReader{l: l}
+        BlockReader{l: l, err: None, line: 0}
+    }
+    
+    pub fn err(self) -> Option<ParseError> {
+        self.err
     }
 }
 
-impl Iterator for BlockReader {
+impl Iterator for  BlockReader {
     type Item = Block;
 
     fn next(&mut self) -> Option<Block> {
         // idx
         if let Some(Ok(idx)) = self.l.next() {
-            println!("{:?}", idx);
-            if !is_idx(&idx) { return None }
-        }
+            self.line += 1;
+            if idx == "" || idx == "\r" { return None }
+            else if !is_idx(&idx) {
+                self.err = Some(ParseError::InvalidIndex);
+                return None
+            }
+        } else { return None }
 
         // time
         let t: Times;
         match self.l.next() {
             Some(Ok(tl)) => {
+                self.line += 1;
                 match parse_time_line(&tl) {
                     Ok(tt) => t=tt,
-                    Err(_) => return None,
+                    Err(e) => {
+                        self.err = Some(e);
+                        return None
+                    }
                 }
             }
-            _ => return None,
+            _ => {
+                self.err = Some(ParseError::InvalidTimeString);
+                return None
+            }
         }
 
         // content
         let mut c: String = "".to_string();
-        while let Some(Ok(text)) = self.l.next() {
-            if text == "\r" { break }
-            c = c + &text.trim_right_matches("\r") + "\n";
-        } 
+        while let Some(text) = self.l.next() {
+            self.line += 1;
+            match text {
+                Ok(text) => {
+                    if text == "\r" || text == "" { break }
+                    c = c + &text.trim_right_matches("\r") + "\n";
+                }
+                Err(_) => {
+                    self.err = Some(ParseError::InvalidContent);
+                    return None;
+                }
+            }
+        }
         return Some(Block{
             times: t,
             content: c,
         })
     }
 }
+
       
 fn is_idx(s: &str) -> bool {
     match s.trim_right_matches("\r").parse::<i64>() {
@@ -103,7 +166,7 @@ fn parse_time_line(s: &str) -> Result<Times, ParseError> {
 }
 
 #[derive(Debug)]
-pub enum ParseError { InvalidTimeString }
+pub enum ParseError { InvalidTimeString, InvalidIndex, InvalidContent }
 
 impl From<num::ParseIntError> for ParseError {
     fn from(_: num::ParseIntError) -> ParseError {

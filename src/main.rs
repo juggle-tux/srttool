@@ -18,20 +18,32 @@ macro_rules! printe {
 
 fn main() {
     let cmd = parse_cmd();
-    if let Some(offset) = cmd.value_of("offset") {
-        match dur_from_str(offset) {
-            Ok(d) => println!("{}", d),
+    let offset = if let Some(o) = cmd.value_of("offset") {
+        match dur_from_str(o) {
+            Ok(d) => d,
             Err(e) => {
                 printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\"", e.description());
-                return
+                return;
             }
         }
-    }
+    } else { std::time::duration::Duration::zero()};
+
+    
     match open_file(cmd.value_of("file").expect("")) {
         Ok(lines) => {
-            let r = BlockReader::new(lines);
-            for b in r {
-                println!("{:?}", b);
+            let mut r = BlockReader::new(lines);
+            
+            let offset = Times::from(&offset);
+
+            let mut i = 0;
+            while let Some(mut b) = r.next() {
+                b.times = b.times + offset;
+                i += 1;
+                print!("{}\n{}", i, b);
+            }
+            let l = r.line;
+            if let Some(e) = r.err(){
+                println!("Line {}: {:?}", l, e);
             }
         }
         Err(e) => printe!(e.to_string()),
