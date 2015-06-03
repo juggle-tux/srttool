@@ -1,14 +1,13 @@
 extern crate clap;
 
 use std::convert::From;
-//use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
 use std::num;
-use std::ops::Neg;
+use std::ops::{Add, Neg};
 use std::time::duration::Duration;
 
 pub type Lines = io::Lines<BufReader<File>>;
@@ -19,13 +18,23 @@ pub struct Times {
     end: Duration,
 }
 
+impl Add for Times {
+    type Output = Times;
+
+    fn add(self, rhs: Times) -> Times {
+        Times{
+            start: self.start.add(rhs.start),
+            end: self.end.add(rhs.end),
+        }
+    }
+}
+
 /// single subtitle block
 #[derive(Debug, Clone)]
 pub struct Block {
     times: Times,
     content: String,
 }
-
 
 pub struct BlockReader {
     l: Lines,
@@ -78,7 +87,6 @@ fn is_idx(s: &str) -> bool {
         Ok(_) => true,
         Err(_) => false,
     }
-    
 }
 
 fn parse_time_line(s: &str) -> Result<Times, ParseError> {
@@ -93,6 +101,7 @@ fn parse_time_line(s: &str) -> Result<Times, ParseError> {
     }
     return Err(ParseError::InvalidTimeString)
 }
+
 #[derive(Debug)]
 pub enum ParseError { InvalidTimeString }
 
