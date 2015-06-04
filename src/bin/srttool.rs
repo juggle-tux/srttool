@@ -1,16 +1,11 @@
-#![feature(std_misc)]
-
 extern crate clap;
+extern crate srttool;
 
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-pub use srt::*;
-
-pub mod srt;
-
-// print error
+use srttool::*;
 
 macro_rules! println_stderr(
     ($($arg:tt)*) => (

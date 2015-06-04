@@ -1,4 +1,4 @@
-extern crate clap;
+#![feature(std_misc)]
 
 use std::convert::From;
 use std::error::Error;
