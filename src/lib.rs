@@ -86,7 +86,7 @@ impl Display for Block {
 pub struct BlockReader {
     l: Lines,
     err: Option<ParseError>,
-    pub line: i64,
+    line: u64,
 }
 
 impl BlockReader {
@@ -97,6 +97,10 @@ impl BlockReader {
     /// err returns the last ocured Error or None if there was no Error
     pub fn err(self) -> Option<ParseError> {
         self.err
+    }
+
+    pub fn line_nr(&self) -> u64 {
+        self.line
     }
 }
 

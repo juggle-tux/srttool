@@ -1,5 +1,5 @@
 [package]
-name = "srttool"
+name = "srt"
 version = "0.1.0"
 authors = ["tux <juggle-tux@users.noreply.github.com>"]
 

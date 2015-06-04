@@ -1,15 +1,15 @@
 extern crate clap;
-extern crate srttool;
+extern crate srt;
 
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use srttool::*;
+use srt::{BlockReader, Times, Lines};
 
 macro_rules! println_stderr(
     ($($arg:tt)*) => (
-        match writeln!(&mut ::std::io::stderr(), $($arg)* ) {
+        match writeln!(&mut io::stderr(), $($arg)* ) {
             Ok(_) => {},
             Err(x) => panic!("Unable to write to stderr: {}", x),
         }
@@ -24,7 +24,7 @@ macro_rules! printe {
 fn main() {
     let cmd = parse_cmd();
     let offset = if let Some(o) = cmd.value_of("offset") {
-        match dur_from_str(o) {
+        match srt::dur_from_str(o) {
             Ok(d) => Times::from(&d),
             Err(e) => {
                 printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\"", e.description());
@@ -35,6 +35,7 @@ fn main() {
 
     
     match open_file(cmd.value_of("file").expect("")) {
+        Err(e) => printe!(e.to_string()),
         Ok(lines) => {
             let mut r = BlockReader::new(lines);
             let mut i = 0;
@@ -45,13 +46,12 @@ fn main() {
                 print!("{}\n{}", i, b);
             }
 
-            let l = r.line;
+            let l = r.line_nr();
             match r.err() {
                 None => println_stderr!("Finish after {} lines", l),
                 Some(e) => printe!("Line {}: {:?}", l, e),
             }
         }
-        Err(e) => printe!(e.to_string()),
     }
 }
 
