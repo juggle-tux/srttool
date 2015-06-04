@@ -30,22 +30,20 @@ fn main() {
     let cmd = parse_cmd();
     let offset = if let Some(o) = cmd.value_of("offset") {
         match dur_from_str(o) {
-            Ok(d) => d,
+            Ok(d) => Times::from(&d),
             Err(e) => {
                 printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\"", e.description());
                 return;
             }
         }
-    } else { std::time::duration::Duration::zero()};
+    } else { Times::new() };
 
     
     match open_file(cmd.value_of("file").expect("")) {
         Ok(lines) => {
             let mut r = BlockReader::new(lines);
-            
-            let offset = Times::from(&offset);
-
             let mut i = 0;
+
             while let Some(mut b) = r.next() {
                 b.times = b.times + offset;
                 i += 1;

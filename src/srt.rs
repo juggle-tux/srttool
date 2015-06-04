@@ -12,6 +12,7 @@ use std::time::duration::Duration;
 
 pub type Lines = io::Lines<BufReader<File>>;
 
+/// start and end time of a subtitle block
 #[derive(Debug, Clone, Copy)]
 pub struct Times {
     start: Duration,
@@ -24,24 +25,30 @@ impl<'a> From<&'a Duration> for Times {
     }
 }
 
+impl Times {
+    pub fn new() -> Times {
+        Times{start: Duration::zero(), end: Duration::zero()}
+    }
+}
+
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // start time
         let sh = self.start.num_hours();
         let o = sh * 60;
         let sm = self.start.num_minutes() - o;
-        let o = o * 60 + sm * 60;
+        let o = 60 * (o + sm);
         let ss = self.start.num_seconds() - o;
-        let o = o * 1000 + ss * 1000;
+        let o = 1000 * (o + ss);
         let sms = self.start.num_milliseconds() - o;
 
         // end time
         let eh = self.end.num_hours();
         let o = eh * 60;
         let em = self.end.num_minutes() - o;
-        let o = o * 60 + em * 60;
+        let o = 60 * (o + em);
         let es = self.end.num_seconds() - o;
-        let o = o * 1000 + es * 1000;
+        let o = 1000 * (o + es);
         let ems = self.end.num_milliseconds() - o;
 
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
@@ -75,6 +82,7 @@ impl Display for Block {
     }
 }
 
+/// a BlockReader reads from a io::Lines<BufReader<File>>
 pub struct BlockReader {
     l: Lines,
     err: Option<ParseError>,
@@ -82,23 +90,20 @@ pub struct BlockReader {
 }
 
 impl BlockReader {
-    //#[inline]
     pub fn new(l: Lines) -> BlockReader {
         BlockReader{l: l, err: None, line: 0}
     }
     
+    /// err returns the last ocured Error or None if there was no Error
     pub fn err(self) -> Option<ParseError> {
         self.err
-    }
-
-    pub fn line_nr(self) -> i64 {
-        self.line
     }
 }
 
 impl Iterator for  BlockReader {
     type Item = Block;
 
+    /// next returns the next subtitle Block or None at EOF OR Error
     fn next(&mut self) -> Option<Block> {
         // idx
         if let Some(Ok(idx)) = self.l.next() {
@@ -112,21 +117,18 @@ impl Iterator for  BlockReader {
 
         // time
         let t: Times;
-        match self.l.next() {
-            Some(Ok(tl)) => {
-                self.line += 1;
-                match parse_time_line(&tl) {
-                    Ok(tt) => t=tt,
-                    Err(e) => {
-                        self.err = Some(e);
-                        return None
-                    }
+        if let Some(Ok(tl)) = self.l.next() {
+            self.line += 1;
+            match parse_time_line(&tl) {
+                Ok(tt) => t=tt,
+                Err(e) => {
+                    self.err = Some(e);
+                    return None
                 }
             }
-            _ => {
-                self.err = Some(ParseError::InvalidTimeString);
-                return None
-            }
+        } else {
+            self.err = Some(ParseError::InvalidTimeString);
+            return None
         }
 
         // content
@@ -144,10 +146,7 @@ impl Iterator for  BlockReader {
                 }
             }
         }
-        return Some(Block{
-            times: t,
-            content: c,
-        })
+        return Some(Block{times: t, content: c})
     }
 }
 
@@ -189,11 +188,15 @@ impl Display for ParseError {
 
 impl Error for ParseError {
     fn description(&self) -> &'static str {
-        return "Invalid time"
+        match self {
+            &ParseError::InvalidIndex => "Invalid index",
+            &ParseError::InvalidTimeString => "Invalid time",
+            &ParseError::InvalidContent => "Invalid content",
+        }
     }
 }
 
-// Parse a &str with the format "HH:MM:SS:sss" to a Duration
+/// Parse a &str with the format "HH:MM:SS:sss" to a Duration
 pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
     let neg;
     let s;
@@ -221,8 +224,9 @@ pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
     let ms = try!(sv[1].parse());
     if neg {
         return Ok(dur(h, m, s, ms).neg())
+    } else {
+        return Ok(dur(h, m, s, ms))
     }
-    return Ok(dur(h, m, s, ms))
 }
 
 #[inline]
