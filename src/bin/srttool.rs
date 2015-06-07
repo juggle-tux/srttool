@@ -33,24 +33,23 @@ fn main() {
         }
     } else { Times::new() };
 
-    
     match open_file(cmd.value_of("file").expect("")) {
         Err(e) => printe!(e.to_string()),
         Ok(lines) => {
             let mut r = BlockReader::new(lines);
             let mut i = 0;
 
-            while let Some(mut b) = r.next() {
-                b.times = b.times + offset;
-                i += 1;
-                print!("{}\n{}", i, b);
+            while let Some(b) = r.next() {
+                match b {
+                    Ok(mut b) => {
+                        b.times = b.times + offset;
+                        i += 1;
+                        print!("{}\n{}", i, b);
+                    }
+                    Err(e) => printe!(e),
+                }
             }
-
-            let l = r.line_nr();
-            match r.err() {
-                None => println_stderr!("Finish after {} lines", l),
-                Some(e) => printe!("Line {}: {:?}", l, e),
-            }
+            println_stderr!("{} lines done", r.line_nr())          
         }
     }
 }

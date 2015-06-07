@@ -19,36 +19,37 @@ pub struct Times {
     end: Duration,
 }
 
-impl<'a> From<&'a Duration> for Times {
-    fn from(d: &'a Duration) -> Times {
-        Times{start: *d, end: *d}
-    }
-}
-
 impl Times {
     pub fn new() -> Times {
         Times{start: Duration::zero(), end: Duration::zero()}
     }
 }
 
+impl<'a> From<&'a Duration> for Times {
+    fn from(d: &'a Duration) -> Times {
+        Times{start: *d, end: *d}
+    }
+}
+
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // start time
+        let mut o;
         let sh = self.start.num_hours();
-        let o = sh * 60;
+        o = sh * 60;
         let sm = self.start.num_minutes() - o;
-        let o = 60 * (o + sm);
+        o = 60 * (o + sm);
         let ss = self.start.num_seconds() - o;
-        let o = 1000 * (o + ss);
+        o = 1000 * (o + ss);
         let sms = self.start.num_milliseconds() - o;
 
         // end time
         let eh = self.end.num_hours();
-        let o = eh * 60;
+        o = eh * 60;
         let em = self.end.num_minutes() - o;
-        let o = 60 * (o + em);
+        o = 60 * (o + em);
         let es = self.end.num_seconds() - o;
-        let o = 1000 * (o + es);
+        o = 1000 * (o + es);
         let ems = self.end.num_milliseconds() - o;
 
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
@@ -77,67 +78,59 @@ pub struct Block {
 
 impl Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}\n{}\n", self.times, self.content)
-    
+        write!(f, "{}\n{}\n", self.times, self.content)    
     }
 }
 
 /// a BlockReader reads from a io::Lines<BufReader<File>>
 pub struct BlockReader {
-    l: Lines,
-    err: Option<ParseError>,
+    buf: Lines,
     line: u64,
 }
 
 impl BlockReader {
-    pub fn new(l: Lines) -> BlockReader {
-        BlockReader{l: l, err: None, line: 0}
-    }
-    
-    /// err returns the last ocured Error or None if there was no Error
-    pub fn err(self) -> Option<ParseError> {
-        self.err
+    #[inline]
+    pub fn new(buf: Lines) -> BlockReader {
+        BlockReader{buf: buf, line: 0}
     }
 
+    #[inline]
     pub fn line_nr(&self) -> u64 {
         self.line
     }
 }
 
 impl Iterator for  BlockReader {
-    type Item = Block;
+    type Item = Result<Block, ParseError>;
 
     /// next returns the next subtitle Block or None at EOF OR Error
-    fn next(&mut self) -> Option<Block> {
+    fn next(&mut self) -> Option<Result<Block, ParseError>> {
         // idx
-        if let Some(Ok(idx)) = self.l.next() {
+        if let Some(Ok(idx)) = self.buf.next() {
             self.line += 1;
-            if idx == "" || idx == "\r" { return None }
+            if idx == "" || idx == "\r" { return None } // File ends with a final newline
             else if !is_idx(&idx) {
-                self.err = Some(ParseError::InvalidIndex);
-                return None
+                return Some(Err(ParseError::InvalidIndex));
             }
-        } else { return None }
+        } else { return None } // File ends withoout final newline
 
         // time
         let t: Times;
-        if let Some(Ok(tl)) = self.l.next() {
+        if let Some(Ok(tl)) = self.buf.next() {
             self.line += 1;
             match parse_time_line(&tl) {
                 Ok(tt) => t=tt,
                 Err(e) => {
-                    self.err = Some(e);
-                    return None
+                    return Some(Err(e))
                 }
             }
         } else {
-            self.err = Some(ParseError::InvalidTimeString);
-            return None
+            return Some(Err(ParseError::InvalidTimeString))
         }
 
         // content
-        let mut c: String = "".to_string();
-        while let Some(text) = self.l.next() {
+        let mut c = String::new();
+        while let Some(text) = self.buf.next() {
             self.line += 1;
             match text {
                 Ok(text) => {
@@ -145,12 +138,11 @@ impl Iterator for  BlockReader {
                     c = c + &text.trim_right_matches("\r") + "\n";
                 }
                 Err(_) => {
-                    self.err = Some(ParseError::InvalidContent);
-                    return None;
+                    return Some(Err(ParseError::InvalidContent));
                 }
             }
         }
-        return Some(Block{times: t, content: c})
+        return Some(Ok(Block{times: t, content: c}))
     }
 }
 
@@ -192,10 +184,10 @@ impl Display for ParseError {
 
 impl Error for ParseError {
     fn description(&self) -> &'static str {
-        match self {
-            &ParseError::InvalidIndex => "Invalid index",
-            &ParseError::InvalidTimeString => "Invalid time",
-            &ParseError::InvalidContent => "Invalid content",
+        match *self {
+            ParseError::InvalidIndex => "Invalid index",
+            ParseError::InvalidTimeString => "Invalid time",
+            ParseError::InvalidContent => "Invalid content",
         }
     }
 }
