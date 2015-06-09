@@ -3,14 +3,11 @@
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
-use std::fs::File;
 use std::io::prelude::*;
-use std::io::{self, BufReader};
+use std::io::Lines;
 use std::num;
 use std::ops::{Add, Neg};
 use std::time::duration::Duration;
-
-pub type Lines = io::Lines<BufReader<File>>;
 
 /// start and end time of a subtitle block
 #[derive(Debug, Clone, Copy)]
@@ -83,14 +80,14 @@ impl Display for Block {
 }
 
 /// a BlockReader reads from a io::Lines<BufReader<File>>
-pub struct BlockReader {
-    buf: Lines,
+pub struct BlockReader<B> {
+    buf: Lines<B>,
     line: u64,
 }
 
-impl BlockReader {
+impl<B> BlockReader<B> {
     #[inline]
-    pub fn new(buf: Lines) -> BlockReader {
+    pub fn new(buf: Lines<B>) -> BlockReader<B> {
         BlockReader{buf: buf, line: 0}
     }
 
@@ -100,7 +97,7 @@ impl BlockReader {
     }
 }
 
-impl Iterator for  BlockReader {
+impl<B: BufRead> Iterator for  BlockReader<B> {
     type Item = Result<Block, ParseError>;
 
     /// next returns the next subtitle Block or None at EOF OR Error
@@ -146,7 +143,6 @@ impl Iterator for  BlockReader {
     }
 }
 
-      
 fn is_idx(s: &str) -> bool {
     match s.trim_right_matches("\r").parse::<i64>() {
         Ok(_) => true,

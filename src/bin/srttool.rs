@@ -5,7 +5,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use srt::{BlockReader, Times, Lines};
+use srt::{BlockReader, Times};
 
 macro_rules! println_stderr(
     ($($arg:tt)*) => (
@@ -57,7 +57,7 @@ fn main() {
 fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
     clap::App::new("srttool")
         .version("0.0.1")
-        .author("tux <juggle-tux@users.noreply.github.com>")
+        .author("Juggle Tux <juggle-tux@users.noreply.github.com>")
         .about("readjust the timing in a srt subtitle file")
         .arg(clap::Arg::with_name("file")
              .index(1)
@@ -71,7 +71,7 @@ fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
         .get_matches()
 }
 
-fn open_file(path: &str) -> Result<Lines, io::Error> {
+fn open_file(path: &str) -> Result<io::Lines<BufReader<File>>, io::Error> {
     let file = try!(File::open(path));
     Ok(BufReader::new(file).lines())
 }
