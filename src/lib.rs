@@ -1,10 +1,11 @@
 #![feature(std_misc)]
+#![allow(dead_code)]
 
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::prelude::*;
-use std::io::Lines;
+use std::io::{self, Lines};
 use std::num;
 use std::ops::{Add, Neg};
 use std::time::duration::Duration;
@@ -79,16 +80,16 @@ impl Display for Block {
     }
 }
 
-/// a BlockReader reads from a io::Lines<BufReader<File>>
+/// a BlockReader
 pub struct BlockReader<B> {
     buf: Lines<B>,
     line: u64,
 }
 
-impl<B> BlockReader<B> {
+impl<B: BufRead> BlockReader<B> {
     #[inline]
-    pub fn new(buf: Lines<B>) -> BlockReader<B> {
-        BlockReader{buf: buf, line: 0}
+    pub fn new(buf: B) -> BlockReader<B> {
+        BlockReader{buf: buf.lines(), line: 0}
     }
 
     #[inline]
@@ -100,7 +101,7 @@ impl<B> BlockReader<B> {
 impl<B: BufRead> Iterator for  BlockReader<B> {
     type Item = Result<Block, ParseError>;
 
-    /// next returns the next subtitle Block or None at EOF OR Error
+    /// next returns the next subtitle Block or None at EOF
     fn next(&mut self) -> Option<Result<Block, ParseError>> {
         // idx
         if let Some(Ok(idx)) = self.buf.next() {

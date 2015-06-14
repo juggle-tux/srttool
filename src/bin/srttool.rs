@@ -35,8 +35,8 @@ fn main() {
 
     match open_file(cmd.value_of("file").expect("")) {
         Err(e) => printe!(e.to_string()),
-        Ok(lines) => {
-            let mut r = BlockReader::new(lines);
+        Ok(file) => {
+            let mut r = BlockReader::new(file);
             let mut i = 0;
 
             while let Some(b) = r.next() {
@@ -71,8 +71,8 @@ fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
         .get_matches()
 }
 
-fn open_file(path: &str) -> Result<io::Lines<BufReader<File>>, io::Error> {
+fn open_file(path: &str) -> Result<BufReader<File>, io::Error> {
     let file = try!(File::open(path));
-    Ok(BufReader::new(file).lines())
+    Ok(BufReader::new(file))
 }
 
