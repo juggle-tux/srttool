@@ -1,11 +1,10 @@
 #![feature(std_misc)]
-#![allow(dead_code)]
 
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::prelude::*;
-use std::io::{self, Lines};
+use std::io::{Lines};
 use std::num;
 use std::ops::{Add, Neg};
 use std::time::duration::Duration;

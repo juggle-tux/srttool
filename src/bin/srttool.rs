@@ -17,11 +17,16 @@ macro_rules! println_stderr(
 );
 
 macro_rules! printe {
-    ($arg:expr) => { println_stderr!("ERROR: {:?}", $arg) };
-    ($fmt:expr, $($arg:expr),*) => { println_stderr!(concat!("ERROR: ", $fmt), $($arg),*) };
+    ($arg:expr) => {
+        println_stderr!("ERROR: {:?}", $arg)
+    };
+    ($fmt:expr, $($arg:expr),*) => {
+        println_stderr!(concat!("ERROR: ", $fmt), $($arg),*)
+    };
 }
 
 fn main() {
+    
     let cmd = parse_cmd();
     let offset = if let Some(o) = cmd.value_of("offset") {
         match srt::dur_from_str(o) {
@@ -38,13 +43,20 @@ fn main() {
         Ok(file) => {
             let mut r = BlockReader::new(file);
             let mut i = 0;
-
+            let mut of: Box<io::Write> = match cmd.value_of("outfile") {
+                Some(p) => Box::new(File::create(p).unwrap()),
+                None => Box::new(io::stdout()),
+            };
+            
             while let Some(b) = r.next() {
                 match b {
                     Ok(mut b) => {
                         b.times = b.times + offset;
                         i += 1;
-                        print!("{}\n{}", i, b);
+                        if let Err(e) = write!(&mut of, "{}\n{}", i, b) {
+                            printe!(e);
+                            return;
+                        }
                     }
                     Err(e) => printe!(e),
                 }
@@ -68,6 +80,11 @@ fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
              .long("offset")
              .help("The time offset to add. (prfix with n for negative values)")
              .takes_value(true))
+        .arg(clap::Arg::with_name("outfile")
+             .short("f")
+             .long("out-file")
+             .help("Output file default: stdout")
+             .takes_value(true))
         .get_matches()
 }
 
@@ -75,4 +92,3 @@ fn open_file(path: &str) -> Result<BufReader<File>, io::Error> {
     let file = try!(File::open(path));
     Ok(BufReader::new(file))
 }
-
