@@ -7,14 +7,14 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, BufWriter};
 use srt::{BlockReader, Times};
 
-macro_rules! println_stderr(
-    ($($arg:tt)*) => (
+macro_rules! println_stderr{
+    ($($arg:tt)*) => {
         match writeln!(&mut io::stderr(), $($arg)* ) {
             Ok(_) => {},
             Err(x) => panic!("Unable to write to stderr: {}", x),
         }
-    )
-);
+    }
+}
 
 macro_rules! printe {
     ($arg:expr) => {
@@ -30,51 +30,41 @@ fn main() {
     let offset = if let Some(o) = cmd.value_of("offset") {
         match srt::dur_from_str(o) {
             Ok(d) => Times::from(&d),
-            Err(e) => {
-                printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\"", e.description());
-                return;
-            }
+            Err(e) => return printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\""
+                                     , e.description()),
         }
     } else { Times::new() };
     
-    let mut outfile: Box<io::Write> = match cmd.value_of("outfile") {
-        Some(p) => match File::create(p) {
+    let mut outfile: Box<io::Write> = if let Some(p) = cmd.value_of("outfile") {
+        match File::create(p) {
             Ok(f) => Box::new(BufWriter::new(f)),
-            Err(e) => { printe!(e.to_string()); return}
-        },
-        None => Box::new(io::stdout()),
-    };
-
+            Err(e) => return printe!(e.to_string()),
+        }
+    } else { Box::new(io::stdout()) };
+    
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {
         let mut infile = match open_file(path) {
             Ok(f) => BlockReader::new(f),
-            Err(e) => {printe!(e.to_string()); return}
+            Err(e) => return printe!(e.to_string()),
         };
+        
         while let Some(b) = infile.next() {
             match b {
                 Ok(mut b) => {
                     b.times = b.times + offset;
                     i += 1;
                     if let Err(e) = write!(&mut outfile, "{}\n{}", i, b) {
-                        printe!(e.to_string());
-                        return;
+                        return printe!(e.to_string())
                     }
                 }
-                Err(e) => {
-                    printe!(e.to_string());
-                    return
-                }
+                Err(e) => return printe!(e.to_string()),
             }
         }
-        println_stderr!("from \"{}\" {} lines done", path, infile.line)
+        println_stderr!("from \"{}\" {} lines parsed", path, infile.line)
     }
-    if let Err(e) = outfile.flush() {
-        printe!(e.to_string());
-        return
-    }
+    if let Err(e) = outfile.flush() { return printe!(e.to_string()) }
 }
-    
 
 
 fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
@@ -84,7 +74,7 @@ fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
         .about("readjust the timing in a srt subtitle file")
         .arg(clap::Arg::with_name("infile")
              .index(1)
-             .help("The input file")
+             .help("The input files")
              .required(true)
              .multiple(true))
         .arg(clap::Arg::with_name("offset")
