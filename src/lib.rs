@@ -12,8 +12,8 @@ use std::time::duration::Duration;
 /// start and end time of a subtitle block
 #[derive(Debug, Clone, Copy)]
 pub struct Times {
-    start: Duration,
-    end: Duration,
+    pub start: Duration,
+    pub end: Duration,
 }
 
 impl Times {
