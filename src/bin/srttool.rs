@@ -4,7 +4,7 @@ extern crate srt;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::{self, BufReader};
+use std::io::{self, BufReader, BufWriter};
 use srt::{BlockReader, Times};
 
 macro_rules! println_stderr(
@@ -26,7 +26,6 @@ macro_rules! printe {
 }
 
 fn main() {
-    
     let cmd = parse_cmd();
     let offset = if let Some(o) = cmd.value_of("offset") {
         match srt::dur_from_str(o) {
@@ -37,44 +36,57 @@ fn main() {
             }
         }
     } else { Times::new() };
+    
+    let mut outfile: Box<io::Write> = match cmd.value_of("outfile") {
+        Some(p) => match File::create(p) {
+            Ok(f) => Box::new(BufWriter::new(f)),
+            Err(e) => { printe!(e.to_string()); return}
+        },
+        None => Box::new(io::stdout()),
+    };
 
-    match open_file(cmd.value_of("file").expect("")) {
-        Err(e) => printe!(e.to_string()),
-        Ok(file) => {
-            let mut r = BlockReader::new(file);
-            let mut i = 0;
-            let mut of: Box<io::Write> = match cmd.value_of("outfile") {
-                Some(p) => Box::new(File::create(p).unwrap()),
-                None => Box::new(io::stdout()),
-            };
-            
-            while let Some(b) = r.next() {
-                match b {
-                    Ok(mut b) => {
-                        b.times = b.times + offset;
-                        i += 1;
-                        if let Err(e) = write!(&mut of, "{}\n{}", i, b) {
-                            printe!(e);
-                            return;
-                        }
+    let mut i = 0;
+    for path in cmd.values_of("infile").expect("Input file is required") {
+        let mut infile = match open_file(path) {
+            Ok(f) => BlockReader::new(f),
+            Err(e) => {printe!(e.to_string()); return}
+        };
+        while let Some(b) = infile.next() {
+            match b {
+                Ok(mut b) => {
+                    b.times = b.times + offset;
+                    i += 1;
+                    if let Err(e) = write!(&mut outfile, "{}\n{}", i, b) {
+                        printe!(e.to_string());
+                        return;
                     }
-                    Err(e) => printe!(e),
+                }
+                Err(e) => {
+                    printe!(e.to_string());
+                    return
                 }
             }
-            println_stderr!("{} lines done", r.line_nr())          
         }
+        println_stderr!("from \"{}\" {} lines done", path, infile.line)
+    }
+    if let Err(e) = outfile.flush() {
+        printe!(e.to_string());
+        return
     }
 }
+    
+
 
 fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
     clap::App::new("srttool")
         .version("0.0.1")
         .author("Juggle Tux <juggle-tux@users.noreply.github.com>")
         .about("readjust the timing in a srt subtitle file")
-        .arg(clap::Arg::with_name("file")
+        .arg(clap::Arg::with_name("infile")
              .index(1)
              .help("The input file")
-             .required(true))
+             .required(true)
+             .multiple(true))
         .arg(clap::Arg::with_name("offset")
              .short("o")
              .long("offset")

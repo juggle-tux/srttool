@@ -82,18 +82,13 @@ impl Display for Block {
 /// a BlockReader
 pub struct BlockReader<B> {
     buf: Lines<B>,
-    line: u64,
+    pub line: u64,
 }
 
 impl<B: BufRead> BlockReader<B> {
     #[inline]
     pub fn new(buf: B) -> BlockReader<B> {
         BlockReader{buf: buf.lines(), line: 0}
-    }
-
-    #[inline]
-    pub fn line_nr(&self) -> u64 {
-        self.line
     }
 }
 
@@ -190,15 +185,11 @@ impl Error for ParseError {
 
 /// Parse a &str with the format "HH:MM:SS:sss" to a Duration
 pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
-    let neg;
-    let s;
-    if ds.starts_with("n") {
-        neg = true;
-        s = ds.trim_left_matches("n");
+    let (neg, s) = if ds.starts_with("n") {
+        (true, ds.trim_left_matches("n"))
     } else {
-        neg = false;
-        s = ds;
-    }
+        (false,ds)
+    };
     // Vec [hh, mm, ss+ms]
     let tv: Vec<_> = s.splitn(3, ":").collect();
     if tv.len() != 3 {
