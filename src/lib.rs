@@ -3,11 +3,10 @@
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
-use std::io::prelude::*;
-use std::io::{Lines};
-use std::num;
+use std::io::{Lines, BufRead};
+use std::num::ParseIntError;
 use std::ops::{Add, Neg};
-use std::time::duration::Duration;
+use std::time::Duration;
 
 /// start and end time of a subtitle block
 #[derive(Debug, Clone, Copy)]
@@ -25,6 +24,12 @@ impl Times {
 impl<'a> From<&'a Duration> for Times {
     fn from(d: &'a Duration) -> Times {
         Times{start: *d, end: *d}
+    }
+}
+
+impl From<Duration> for Times {
+    fn from(d: Duration) -> Times {
+        Times{start: d, end: d}
     }
 }
 
@@ -100,25 +105,25 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
         // idx
         if let Some(Ok(idx)) = self.buf.next() {
             self.line += 1;
-            if idx == "" || idx == "\r" { return None } // File ends with a final newline
-            else if !is_idx(&idx) {
+            if idx == "" || idx == "\r" {
+                return None //File ends with final new line
+            } else if !is_idx(&idx) {
                 return Some(Err(ParseError::InvalidIndex));
             }
-        } else { return None } // File ends withoout final newline
+        } else {
+            return None // File ends withoout final newline
+        }
 
-        // time
-        let t: Times;
-        if let Some(Ok(tl)) = self.buf.next() {
+        // times
+        let t = if let Some(Ok(tl)) = self.buf.next() {
             self.line += 1;
             match parse_time_line(&tl) {
-                Ok(tt) => t=tt,
-                Err(e) => {
-                    return Some(Err(e))
-                }
+                Ok(t) => t,
+                Err(e) => return Some(Err(e)),
             }
         } else {
             return Some(Err(ParseError::InvalidTimeString))
-        }
+        };
 
         // content
         let mut c = String::new();
@@ -139,7 +144,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
 }
 
 fn is_idx(s: &str) -> bool {
-    match s.trim_right_matches("\r").parse::<i64>() {
+    match s.trim_right_matches("\r").parse::<u64>() {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -159,10 +164,14 @@ fn parse_time_line(s: &str) -> Result<Times, ParseError> {
 }
 
 #[derive(Debug)]
-pub enum ParseError { InvalidTimeString, InvalidIndex, InvalidContent }
+pub enum ParseError {
+    InvalidTimeString,
+    InvalidIndex,
+    InvalidContent,
+}
 
-impl From<num::ParseIntError> for ParseError {
-    fn from(_: num::ParseIntError) -> ParseError {
+impl From<ParseIntError> for ParseError {
+    fn from(_: ParseIntError) -> ParseError {
         return ParseError::InvalidTimeString
     }
 }
@@ -191,7 +200,7 @@ pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
         (false,ds)
     };
     // Vec [hh, mm, ss+ms]
-    let tv: Vec<_> = s.splitn(3, ":").collect();
+    let tv: Vec<&str> = s.splitn(3, ":").collect();
     if tv.len() != 3 {
         return Err(ParseError::InvalidTimeString);
     }
