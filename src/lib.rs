@@ -1,5 +1,7 @@
 #![feature(std_misc)]
 
+
+use std::cmp::Ordering;
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
@@ -21,6 +23,28 @@ impl Times {
     }
 }
 
+impl Eq for Times { }
+
+impl PartialEq for Times {
+    fn eq(&self, other: &Times) -> bool {
+        self.start.eq(&other.start) && self.end.eq(&other.end)
+    }
+}
+
+impl Ord for Times {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.start.cmp(&other.start)
+    }
+}
+
+impl PartialOrd for Times {
+    fn partial_cmp(&self, other: &Times) -> Option<Ordering> {
+        self.start.partial_cmp(&other.start)
+    }
+}
+
+
+
 impl<'a> From<&'a Duration> for Times {
     fn from(d: &'a Duration) -> Times {
         Times{start: *d, end: *d}
@@ -36,23 +60,21 @@ impl From<Duration> for Times {
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // start time
-        let mut o;
-        let sh = self.start.num_hours();
-        o = sh * 60;
-        let sm = self.start.num_minutes() - o;
-        o = 60 * (o + sm);
-        let ss = self.start.num_seconds() - o;
-        o = 1000 * (o + ss);
-        let sms = self.start.num_milliseconds() - o;
-
+        let mut t = self.start.num_milliseconds();
+        let sms = t % 1000;
+        t /= 1000;
+        let ss = t % 60;
+        t /= 60;
+        let sm = t % 60;
+        let sh = t / 60;
         // end time
-        let eh = self.end.num_hours();
-        o = eh * 60;
-        let em = self.end.num_minutes() - o;
-        o = 60 * (o + em);
-        let es = self.end.num_seconds() - o;
-        o = 1000 * (o + es);
-        let ems = self.end.num_milliseconds() - o;
+        let mut t = self.end.num_milliseconds();
+        let ems = t % 1000;
+        t /= 1000;
+        let es = t % 60;
+        t /= 60;
+        let em = t % 60;
+        let eh = t / 60;
 
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
                sh, sm, ss, sms, eh, em, es, ems)
@@ -72,7 +94,7 @@ impl Add for Times {
 }
 
 /// single subtitle block
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     pub times: Times,
     pub content: String,

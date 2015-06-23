@@ -1,3 +1,4 @@
+#![cfg(not(test))]
 extern crate clap;
 extern crate srt;
 
