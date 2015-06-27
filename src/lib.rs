@@ -68,42 +68,25 @@ impl<'a> From<&'a Duration> for Times {
         Times{start: *d, end: *d}
     }
 }
-/*
-impl From<Duration> for Times {
-    fn from(d: Duration) -> Times {
-        Times{start: d, end: d}
-    }
-}
-*/
+
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        // start time
-        let (sh, sm, ss, sms) = if self.start.lt(&Duration::zero()) {
-            (0, 0, 0, 0)
-        } else {
-            let mut t = self.start.num_milliseconds();
-            let sms = t % 1000;
-            t /= 1000;
-            let ss = t % 60;
-            t /= 60;
-            let sm = t % 60;
-            let sh = t / 60;
-            (sh, sm, ss, sms)
+        let extract_h_m_s_ms = |d: Duration| -> (i64, i64, i64, i64) {
+            if d.lt(&Duration::zero()) {
+                return (0, 0, 0, 0)
+            } else {
+                let mut t = d.num_milliseconds();
+                let sms = t % 1000;
+                t /= 1000;
+                let ss = t % 60;
+                t /= 60;
+                let sm = t % 60;
+                let sh = t / 60;
+                return (sh, sm, ss, sms)
+            }
         };
-        // end time
-        let (eh, em, es ,ems) = if self.end.lt(&Duration::zero()) {
-            (0, 0, 0, 0)
-        } else {
-            let mut t = self.end.num_milliseconds();
-            let ems = t % 1000;
-            t /= 1000;
-            let es = t % 60;
-            t /= 60;
-            let em = t % 60;
-            let eh = t / 60;
-            (eh, em, es ,ems)
-        };
-        
+        let (sh, sm, ss, sms) = extract_h_m_s_ms(self.start); // start time
+        let (eh, em ,es, ems) = extract_h_m_s_ms(self.end); // end time
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
                sh, sm, ss, sms, eh, em, es, ems)
             
