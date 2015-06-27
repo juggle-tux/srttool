@@ -1,6 +1,5 @@
 #![feature(std_misc)]
 
-
 use std::cmp::Ordering;
 use std::convert::From;
 use std::error::Error;
@@ -50,35 +49,45 @@ impl<'a> From<&'a Duration> for Times {
         Times{start: *d, end: *d}
     }
 }
-
+/*
 impl From<Duration> for Times {
     fn from(d: Duration) -> Times {
         Times{start: d, end: d}
     }
 }
-
+*/
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // start time
-        let mut t = self.start.num_milliseconds();
-        let sms = t % 1000;
-        t /= 1000;
-        let ss = t % 60;
-        t /= 60;
-        let sm = t % 60;
-        let sh = t / 60;
+        let (sh, sm, ss, sms) = if self.start.lt(&Duration::zero()) {
+            (0, 0, 0, 0)
+        } else {
+            let mut t = self.start.num_milliseconds();
+            let sms = t % 1000;
+            t /= 1000;
+            let ss = t % 60;
+            t /= 60;
+            let sm = t % 60;
+            let sh = t / 60;
+            (sh, sm, ss, sms)
+        };
         // end time
-        let mut t = self.end.num_milliseconds();
-        let ems = t % 1000;
-        t /= 1000;
-        let es = t % 60;
-        t /= 60;
-        let em = t % 60;
-        let eh = t / 60;
-
+        let (eh, em, es ,ems) = if self.end.lt(&Duration::zero()) {
+            (0, 0, 0, 0)
+        } else {
+            let mut t = self.end.num_milliseconds();
+            let ems = t % 1000;
+            t /= 1000;
+            let es = t % 60;
+            t /= 60;
+            let em = t % 60;
+            let eh = t / 60;
+            (eh, em, es ,ems)
+        };
+        
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
                sh, sm, ss, sms, eh, em, es, ems)
-    
+            
     }
 }
 
