@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License
 along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#![feature(std_misc)]
+//#![feature(std_misc)]
+#![feature(duration)]
 
 use std::cmp::Ordering;
 use std::convert::From;
@@ -25,7 +26,7 @@ use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{Lines, BufRead};
 use std::num::ParseIntError;
-use std::ops::{Add, Neg};
+use std::ops::{Add};
 use std::time::Duration;
 
 /// start and end time of a subtitle block
@@ -37,7 +38,7 @@ pub struct Times {
 
 impl Times {
     pub fn new() -> Times {
-        Times{start: Duration::zero(), end: Duration::zero()}
+        Times{start: Duration::new(0, 0), end: Duration::new(0, 0)}
     }
 }
 
@@ -71,13 +72,12 @@ impl<'a> From<&'a Duration> for Times {
 
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let extract_h_m_s_ms = |d: Duration| -> (i64, i64, i64, i64) {
-            if d.lt(&Duration::zero()) {
+        fn extract_h_m_s_ms(d: Duration) -> (u64, u64, u64, u32) {
+            if d.lt(&Duration::new(0, 0)) {
                 return (0, 0, 0, 0)
             } else {
-                let mut t = d.num_milliseconds();
-                let sms = t % 1000;
-                t /= 1000;
+                let sms = d.extra_nanos() / 1_000_000;
+                let mut t = d.secs();
                 let ss = t % 60;
                 t /= 60;
                 let sm = t % 60;
@@ -188,10 +188,9 @@ fn parse_time_line(s: &str) -> Result<Times, ParseError> {
     if ts.len() != 2 {
         return Err(ParseError::InvalidTimeString);
     }
-    if let Ok(st) = dur_from_str(ts[0].trim_right_matches("\r")) {
-        if let Ok(et) = dur_from_str(ts[1].trim_right_matches("\r")) {
-            return Ok(Times{start: st, end: et})
-        }
+    if let (Ok(st), Ok(et)) = (dur_from_str(ts[0].trim_right_matches("\r")),
+                               dur_from_str(ts[1].trim_right_matches("\r"))){
+        return Ok(Times{start: st, end: et})
     }
     return Err(ParseError::InvalidTimeString)
 }
@@ -227,10 +226,10 @@ impl Error for ParseError {
 
 /// Parse a &str with the format "HH:MM:SS:sss" to a Duration
 pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
-    let (neg, s) = if ds.starts_with("n") {
-        (true, ds.trim_left_matches("n"))
+    let s = if ds.starts_with("n") {
+        ds.trim_left_matches("n")
     } else {
-        (false,ds)
+        ds
     };
     // Vec [hh, mm, ss+ms]
     let tv: Vec<&str> = s.splitn(3, ":").collect();
@@ -247,17 +246,17 @@ pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
     let m = try!(tv[1].parse());
     let s = try!(sv[0].parse());
     let ms = try!(sv[1].parse());
-    if neg {
-        return Ok(dur(h, m, s, ms).neg())
-    } else {
-        return Ok(dur(h, m, s, ms))
-    }
+    //if neg {
+    //    return Ok(dur(h, m, s, ms).neg())
+    //} else {
+    return Ok(dur(h, m, s, ms))
+    //}
 }
 
 #[inline]
-fn dur(h: i64, m: i64, s: i64, ms: i64) -> Duration {
-    Duration::milliseconds(h * 60 * 60 * 1000
-                           +m * 60 * 1000
-                           +s * 1000
-                           +ms)
+fn dur(h: u64, m: u64, s: u64, ms: u32) -> Duration {
+    Duration::new(h * 60 * 60
+                  +m * 60
+                  +s,
+                  ms * 1_000_000)
 }
