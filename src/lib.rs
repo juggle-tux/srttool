@@ -20,13 +20,13 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //#![feature(std_misc)]
 #![feature(duration)]
 
-use std::cmp::Ordering;
+use std::cmp::{Ordering, Eq};
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{Lines, BufRead};
 use std::num::ParseIntError;
-use std::ops::{Add};
+use std::ops::{Add, Sub};
 use std::time::Duration;
 
 /// start and end time of a subtitle block
@@ -100,6 +100,17 @@ impl Add for Times {
         Times{
             start: self.start.add(rhs.start),
             end: self.end.add(rhs.end),
+        }
+    }
+}
+
+impl Sub for Times {
+    type Output = Times;
+
+    fn sub(self, rhs: Times) -> Times {
+        Times{
+            start: self.start.sub(rhs.start),
+            end: self.end.sub(rhs.end),
         }
     }
 }
@@ -225,12 +236,7 @@ impl Error for ParseError {
 }
 
 /// Parse a &str with the format "HH:MM:SS:sss" to a Duration
-pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
-    let s = if ds.starts_with("n") {
-        ds.trim_left_matches("n")
-    } else {
-        ds
-    };
+pub fn dur_from_str(s: &str) -> Result<Duration, ParseError> {
     // Vec [hh, mm, ss+ms]
     let tv: Vec<&str> = s.splitn(3, ":").collect();
     if tv.len() != 3 {
@@ -246,11 +252,7 @@ pub fn dur_from_str(ds: &str) -> Result<Duration, ParseError> {
     let m = try!(tv[1].parse());
     let s = try!(sv[0].parse());
     let ms = try!(sv[1].parse());
-    //if neg {
-    //    return Ok(dur(h, m, s, ms).neg())
-    //} else {
     return Ok(dur(h, m, s, ms))
-    //}
 }
 
 #[inline]
