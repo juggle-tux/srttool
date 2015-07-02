@@ -56,28 +56,29 @@ macro_rules! trye {
 fn main() {
     let cmd = parse_cmd();
 
-    let (offset, neg) = if let Some(o) = cmd.value_of("offset") {
-        if o.starts_with('n') {
-            (Times::from(&trye!(srt::dur_from_str(o.trim_left_matches('n')))),
-             true)
+    let (offset, neg) =
+        if let Some(o) = cmd.value_of("offset") {
+            if o.starts_with('n') {
+                (Times::from(&trye!(srt::dur_from_str(o.trim_left_matches('n')))),
+                 true)
+            } else {
+                (Times::from(&trye!(srt::dur_from_str(o))), false)
+            }
+        } else { (Times::new(), false) };
+    let add_offset_to =
+        |b: &Block| -> srt::Times {
+            if neg {
+                b.times.sub(offset)
+            } else {
+                b.times.add(offset)
+            }
+        };
+    let mut outfile: Box<io::Write> =
+        if let Some(p) = cmd.value_of("outfile") {
+            Box::new(BufWriter::new(trye!(File::create(p))))
         } else {
-            (Times::from(&trye!(srt::dur_from_str(o))), false)
-        }
-    } else { (Times::new(), false) };
-
-    let add_offset_to = |b: &Block| -> srt::Times {
-        if neg {
-            b.times.sub(offset)
-        } else {
-            b.times.add(offset)
-        }
-    };
-    
-    let mut outfile: Box<io::Write> = if let Some(p) = cmd.value_of("outfile") {
-        Box::new(BufWriter::new(trye!(File::create(p))))
-    } else {
-        Box::new(io::stdout())
-    };
+            Box::new(io::stdout())
+        };
     
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {

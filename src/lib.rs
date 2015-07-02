@@ -16,11 +16,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-//#![feature(std_misc)]
 #![feature(duration)]
 
-use std::cmp::{Ordering, Eq};
+use std::cmp::Eq;
 use std::convert::From;
 use std::error::Error;
 use std::fmt::{self, Display};
@@ -30,7 +28,7 @@ use std::ops::{Add, Sub};
 use std::time::Duration;
 
 /// start and end time of a subtitle block
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Times {
     pub start: Duration,
     pub end: Duration,
@@ -41,28 +39,6 @@ impl Times {
         Times{start: Duration::new(0, 0), end: Duration::new(0, 0)}
     }
 }
-
-impl Eq for Times { }
-
-impl PartialEq for Times {
-    fn eq(&self, other: &Times) -> bool {
-        self.start.eq(&other.start) && self.end.eq(&other.end)
-    }
-}
-
-impl Ord for Times {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.start.cmp(&other.start)
-    }
-}
-
-impl PartialOrd for Times {
-    fn partial_cmp(&self, other: &Times) -> Option<Ordering> {
-        self.start.partial_cmp(&other.start)
-    }
-}
-
-
 
 impl<'a> From<&'a Duration> for Times {
     fn from(d: &'a Duration) -> Times {
@@ -109,8 +85,16 @@ impl Sub for Times {
 
     fn sub(self, rhs: Times) -> Times {
         Times{
-            start: self.start.sub(rhs.start),
-            end: self.end.sub(rhs.end),
+            start: if self.start.gt(&rhs.start) {
+                self.start.sub(rhs.start)
+            } else {
+                Duration::new(0,0)
+            },
+            end: if self.end.gt(&rhs.end) {
+                self.end.sub(rhs.end)
+            } else {
+                Duration::new(0,0)
+            }
         }
     }
 }
@@ -158,32 +142,31 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
             return None // File ends withoout final newline
         }
 
-        // times
-        let t = if let Some(Ok(tl)) = self.buf.next() {
-            self.line += 1;
-            match parse_time_line(&tl) {
-                Ok(t) => t,
+        let time =
+            if let Some(Ok(tl)) = self.buf.next() {
+                self.line += 1;
+                match parse_time_line(&tl) {
+                Ok(time) => time,
                 Err(e) => return Some(Err(e)),
-            }
-        } else {
-            return Some(Err(ParseError::InvalidTimeString))
-        };
+                }
+            } else {
+                return Some(Err(ParseError::InvalidTimeString))
+            };
 
-        // content
-        let mut c = String::new();
+        let mut content = String::new();
         while let Some(text) = self.buf.next() {
             self.line += 1;
             match text {
                 Ok(text) => {
                     if text == "\r" || text == "" { break }
-                    c = c + &text.trim_right_matches("\r") + "\n";
+                    content = content + &text.trim_right_matches("\r") + "\n";
                 }
                 Err(_) => {
                     return Some(Err(ParseError::InvalidContent));
                 }
             }
         }
-        return Some(Ok(Block{times: t, content: c}))
+        return Some(Ok(Block{times: time, content: content}))
     }
 }
 

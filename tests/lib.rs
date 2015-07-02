@@ -41,8 +41,8 @@ fn parse_time() {
     t.end = t.end.add(dur_from_str("6:5:4,321").unwrap());
     assert_eq!(format!("{}",t), "01:02:03,456 --> 07:07:07,777");
 
-    // FIXME: t = Times::from(&Duration::new(1, 0).neg());
-    // FIXME: assert_eq!(format!("{}", t), "00:00:00,000 --> 00:00:00,000");
+    t = Times::new() - t;
+    assert_eq!(format!("{}", t), "00:00:00,000 --> 00:00:00,000");
 
     t = Times::from(&dur_from_str("99:99:99,999").unwrap());
     t.end = t.end.mul(2);
