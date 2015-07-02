@@ -25,7 +25,8 @@ use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufWriter};
-use srt::{BlockReader, Times};
+use std::ops::{Add, Sub};
+use srt::{Block, BlockReader, Times};
 
 macro_rules! println_stderr{
     ($($arg:tt)*) => {
@@ -45,45 +46,51 @@ macro_rules! printe {
     };
 }
 
+macro_rules! trye {
+    ($expr:expr) => { match $expr {
+        Ok(res) => res,
+        Err(e) => return printe!(e.to_string()),
+    }}
+}
+
 fn main() {
     let cmd = parse_cmd();
-    let offset = if let Some(o) = cmd.value_of("offset") {
-        match srt::dur_from_str(o) {
-            Ok(d) => Times::from(&d),
-            Err(e) => return printe!("{}\noffset must be in the form \"00:11:22,333\" or \"n00:11:22,333\""
-                                     , e.description()),
+
+    let (offset, neg) = if let Some(o) = cmd.value_of("offset") {
+        if o.starts_with('n') {
+            (Times::from(&trye!(srt::dur_from_str(o.trim_left_matches('n')))),
+             true)
+        } else {
+            (Times::from(&trye!(srt::dur_from_str(o))), false)
         }
-    } else { Times::new() };
+    } else { (Times::new(), false) };
+
+    let add_offset_to = |b: &Block| -> srt::Times {
+        if neg {
+            b.times.sub(offset)
+        } else {
+            b.times.add(offset)
+        }
+    };
     
     let mut outfile: Box<io::Write> = if let Some(p) = cmd.value_of("outfile") {
-        match File::create(p) {
-            Ok(f) => Box::new(BufWriter::new(f)),
-            Err(e) => return printe!(e.to_string()),
-        }
-    } else { Box::new(io::stdout()) };
+        Box::new(BufWriter::new(trye!(File::create(p))))
+    } else {
+        Box::new(io::stdout())
+    };
     
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {
-        let mut infile = match open_file(path) {
-            Ok(f) => BlockReader::new(f),
-            Err(e) => return printe!(e.to_string()),
-        };
-        
+        let mut infile = BlockReader::new(trye!(open_file(path)));
         while let Some(b) = infile.next() {
-            match b {
-                Ok(mut b) => {
-                    b.times = b.times + offset;
-                    i += 1;
-                    if let Err(e) = write!(&mut outfile, "{}\n{}", i, b) {
-                        return printe!(e.to_string())
-                    }
-                }
-                Err(e) => return printe!(e.to_string()),
-            }
+            let mut b = trye!(b);
+            b.times = add_offset_to(&b);
+            i += 1;
+            trye!(write!(&mut outfile, "{}\n{}", i, b))
         }
         println_stderr!("from \"{}\" {} lines parsed", path, infile.line)
     }
-    if let Err(e) = outfile.flush() { return printe!(e.to_string()) }
+    trye!(outfile.flush())
 }
 
 
