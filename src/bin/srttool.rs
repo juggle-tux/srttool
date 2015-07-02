@@ -59,8 +59,8 @@ fn main() {
     let (offset, neg) =
         if let Some(o) = cmd.value_of("offset") {
             if o.starts_with('n') {
-                (Times::from(&trye!(srt::dur_from_str(o.trim_left_matches('n')))),
-                 true)
+                let d = &trye!(srt::dur_from_str(o.trim_left_matches('n')));
+                (Times::from(d), true)
             } else {
                 (Times::from(&trye!(srt::dur_from_str(o))), false)
             }

@@ -170,6 +170,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
     }
 }
 
+#[inline]
 fn is_idx(s: &str) -> bool {
     match s.trim_right_matches("\r").parse::<u64>() {
         Ok(_) => true,
@@ -180,18 +181,18 @@ fn is_idx(s: &str) -> bool {
 fn parse_time_line(s: &str) -> Result<Times, ParseError> {
     let ts: Vec<&str> = s.splitn(2, " --> ").collect();
     if ts.len() != 2 {
-        return Err(ParseError::InvalidTimeString);
+        return Err(ParseError::InvalidTimeLine);
     }
-    if let (Ok(st), Ok(et)) = (dur_from_str(ts[0].trim_right_matches("\r")),
-                               dur_from_str(ts[1].trim_right_matches("\r"))){
-        return Ok(Times{start: st, end: et})
-    }
-    return Err(ParseError::InvalidTimeString)
+    Ok(Times{
+        start: try!(dur_from_str(ts[0].trim_right_matches("\r"))),
+        end: try!(dur_from_str(ts[1].trim_right_matches("\r"))),
+    })
 }
 
 #[derive(Debug)]
 pub enum ParseError {
     InvalidTimeString,
+    InvalidTimeLine,
     InvalidIndex,
     InvalidContent,
 }
@@ -209,11 +210,13 @@ impl Display for ParseError {
 }
 
 impl Error for ParseError {
+    #[inline]
     fn description(&self) -> &'static str {
         match *self {
             ParseError::InvalidIndex => "Invalid index",
             ParseError::InvalidTimeString => "Invalid time",
             ParseError::InvalidContent => "Invalid content",
+            ParseError::InvalidTimeLine => "Invalid time line",
         }
     }
 }
