@@ -49,18 +49,14 @@ impl<'a> From<&'a Duration> for Times {
 impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         fn extract_h_m_s_ms(d: Duration) -> (u64, u64, u64, u32) {
-            if d.lt(&Duration::new(0, 0)) {
-                return (0, 0, 0, 0)
-            } else {
-                let sms = d.extra_nanos() / 1_000_000;
-                let mut t = d.secs();
-                let ss = t % 60;
-                t /= 60;
-                let sm = t % 60;
-                let sh = t / 60;
-                return (sh, sm, ss, sms)
-            }
-        };
+            let sms = d.extra_nanos() / 1_000_000;
+            let mut t = d.secs();
+            let ss = t % 60;
+            t /= 60;
+            let sm = t % 60;
+            let sh = t / 60;
+            return (sh, sm, ss, sms)
+        }
         let (sh, sm, ss, sms) = extract_h_m_s_ms(self.start); // start time
         let (eh, em ,es, ems) = extract_h_m_s_ms(self.end); // end time
         write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
