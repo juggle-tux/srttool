@@ -3,7 +3,7 @@ Copyright 2015 juggle-tux
 
 This file is part of srttool.
 
-Foobar is free software: you can redistribute it and/or modify
+srttool is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+along with srttool.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #![cfg(not(test))]
@@ -23,9 +23,9 @@ extern crate srt;
 
 use std::error::Error;
 use std::fs::File;
-use std::io::prelude::*;
-use std::io::{self, BufReader, BufWriter};
+use std::io::{self, BufReader, BufWriter, Write};
 use std::ops::{Add, Sub};
+use clap::{App, Arg, ArgMatches};
 use srt::{Block, BlockReader, Times};
 
 macro_rules! println_stderr{
@@ -66,14 +66,14 @@ fn main() {
             }
         } else { (Times::new(), false) };
     let add_offset_to =
-        |b: &Block| -> srt::Times {
+        |b: &Block| -> Times {
             if neg {
                 b.times.sub(offset)
             } else {
                 b.times.add(offset)
             }
         };
-    let mut outfile: Box<io::Write> =
+    let mut outfile: Box<Write> =
         if let Some(p) = cmd.value_of("outfile") {
             Box::new(BufWriter::new(trye!(File::create(p))))
         } else {
@@ -95,22 +95,22 @@ fn main() {
 }
 
 
-fn parse_cmd<'a, 'b>() -> clap::ArgMatches<'a, 'b> {
-    clap::App::new("srttool")
+fn parse_cmd<'a, 'b>() -> ArgMatches<'a, 'b> {
+    App::new("srttool")
         .version("0.0.1")
         .author("Juggle Tux <juggle-tux@users.noreply.github.com>")
         .about("readjust the timing in a srt subtitle file")
-        .arg(clap::Arg::with_name("infile")
+        .arg(Arg::with_name("infile")
              .index(1)
              .help("The input files")
              .required(true)
              .multiple(true))
-        .arg(clap::Arg::with_name("offset")
+        .arg(Arg::with_name("offset")
              .short("o")
              .long("offset")
              .help("The time offset to add. (prfix with n for negative values)")
              .takes_value(true))
-        .arg(clap::Arg::with_name("outfile")
+        .arg(Arg::with_name("outfile")
              .short("f")
              .long("out-file")
              .help("Output file default: stdout")

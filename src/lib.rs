@@ -3,18 +3,18 @@ Copyright 2015 juggle-tux
 
 This file is part of srttool.
 
-Foobar is free software: you can redistribute it and/or modify
+srttool is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-Foobar is distributed in the hope that it will be useful,
+srttool is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+along with srttool.  If not, see <http://www.gnu.org/licenses/>.
 */
 #![feature(duration)]
 
@@ -135,15 +135,15 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
                 return Some(Err(ParseError::InvalidIndex));
             }
         } else {
-            return None // File ends withoout final newline
+            return None // File ends without final newline
         }
 
         let time =
             if let Some(Ok(tl)) = self.buf.next() {
                 self.line += 1;
                 match parse_time_line(&tl) {
-                Ok(time) => time,
-                Err(e) => return Some(Err(e)),
+                    Ok(time) => time,
+                    Err(e) => return Some(Err(e)),
                 }
             } else {
                 return Some(Err(ParseError::InvalidTimeString))
