@@ -134,7 +134,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
         // idx
         if let Some(Ok(idx)) = self.buf.next() {
             self.line += 1;
-            if idx == "" || idx == "\r" {
+            if idx == "" {
                 return None //File ends with final new line
             } else if !is_idx(&idx) {
                 return Some(Err(ParseError::InvalidIndex));
@@ -159,8 +159,8 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
             self.line += 1;
             match text {
                 Ok(text) => {
-                    if text == "\r" || text == "" { break }
-                    content = content + &text.trim_right_matches("\r") + "\n";
+                    if text == "" { break }
+                    content = content + &text + "\n";
                 }
                 Err(_) => {
                     return Some(Err(ParseError::InvalidContent));
@@ -173,7 +173,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
 
 #[inline]
 fn is_idx(s: &str) -> bool {
-    match s.trim_right_matches("\r").parse::<u64>() {
+    match s.parse::<u64>() {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -185,8 +185,8 @@ fn parse_time_line(s: &str) -> Result<Times, ParseError> {
         return Err(ParseError::InvalidTimeLine);
     }
     Ok(Times{
-        start: try!(dur_from_str(ts[0].trim_right_matches("\r"))),
-        end: try!(dur_from_str(ts[1].trim_right_matches("\r"))),
+        start: try!(dur_from_str(ts[0])),
+        end: try!(dur_from_str(ts[1])),
     })
 }
 
