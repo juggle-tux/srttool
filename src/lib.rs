@@ -35,12 +35,14 @@ pub struct Times {
 }
 
 impl Times {
+    #[inline]
     pub fn new() -> Times {
         Times{start: Duration::new(0, 0), end: Duration::new(0, 0)}
     }
 }
 
 impl<'a> From<&'a Duration> for Times {
+    #[inline]
     fn from(d: &'a Duration) -> Times {
         Times{start: *d, end: *d}
     }
@@ -68,6 +70,7 @@ impl Display for Times {
 impl Add for Times {
     type Output = Times;
 
+    #[inline]
     fn add(self, rhs: Times) -> Times {
         Times{
             start: self.start.add(rhs.start),
@@ -79,6 +82,7 @@ impl Add for Times {
 impl Sub for Times {
     type Output = Times;
 
+    #[inline]
     fn sub(self, rhs: Times) -> Times {
         Times{
             start: if self.start.gt(&rhs.start) {
@@ -103,6 +107,7 @@ pub struct Block {
 }
 
 impl Display for Block {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}\n{}\n", self.times, self.content)    
     }
