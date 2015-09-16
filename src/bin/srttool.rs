@@ -21,7 +21,6 @@ along with srttool.  If not, see <http://www.gnu.org/licenses/>.
 extern crate clap;
 extern crate srt;
 
-use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::ops::{Add, Sub};
@@ -83,7 +82,7 @@ fn main() {
     
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {
-        let mut infile = BlockReader::new(trye!(open_file(path)));
+        let mut infile = BlockReader::new(BufReader::new(trye!(File::open(path))));
         while let Some(b) = infile.next() {
             let mut b = trye!(b);
             b.times = add_offset_to(&b);
@@ -117,9 +116,4 @@ fn parse_cmd<'a, 'b>() -> ArgMatches<'a, 'b> {
              .help("Output file default: stdout")
              .takes_value(true))
         .get_matches()
-}
-
-fn open_file(path: &str) -> Result<BufReader<File>, io::Error> {
-    let file = try!(File::open(path));
-    Ok(BufReader::new(file))
 }
