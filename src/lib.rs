@@ -223,22 +223,14 @@ impl Error for ParseError {
 
 /// Parse a &str with the format "HH:MM:SS:sss" to a Duration
 pub fn dur_from_str(s: &str) -> Result<Duration, ParseError> {
-    // Vec [hh, mm, ss+ms]
-    let tv: Vec<&str> = s.splitn(3, ":").collect();
-    if tv.len() != 3 {
+    let buf: Vec<u64> = s.splitn(2, ",")
+        .flat_map(|s| s.splitn(3, ":"))
+        .filter_map(|s| s.parse::<u64>().ok())
+        .collect();
+    if buf.len() != 4 {
         return Err(ParseError::InvalidTimeString);
     }
-    // Vec [ss, ms]
-    let sv: Vec<_> = tv[2].splitn(2, ",").collect();
-    if sv.len() != 2 {
-        return Err(ParseError::InvalidTimeString);
-    }
-
-    let h = try!(tv[0].parse());
-    let m = try!(tv[1].parse());
-    let s = try!(sv[0].parse());
-    let ms = try!(sv[1].parse());
-    return Ok(dur(h, m, s, ms))
+    return Ok(dur(buf[0], buf[1], buf[2], buf[3] as u32))
 }
 
 #[inline]
