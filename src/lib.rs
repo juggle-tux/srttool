@@ -24,45 +24,34 @@ use std::fmt::{self, Display};
 use std::io::{Lines, BufRead};
 use std::num::ParseIntError;
 use std::ops::{Add, Sub};
+use std::str::FromStr;
 use std::time::Duration;
 
-/// start and end time of a subtitle block
+/// single subtitle block
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub times: Times,
+    pub content: String,
+}
+
+impl Display for Block {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}\n{}\n", self.times, self.content)
+    }
+}
+
+/// start and end time of a Block
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Times {
-    pub start: Duration,
-    pub end: Duration,
+    pub start: Time,
+    pub end: Time,
 }
 
 impl Times {
     #[inline]
     pub fn new() -> Times {
-        Times{start: Duration::new(0, 0), end: Duration::new(0, 0)}
-    }
-}
-
-impl<'a> From<&'a Duration> for Times {
-    #[inline]
-    fn from(d: &'a Duration) -> Times {
-        Times{start: *d, end: *d}
-    }
-}
-
-impl Display for Times {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        fn h_m_s_ms(d: Duration) -> (u64, u64, u64, u32) {
-            let ms = d.subsec_nanos() / 1_000_000;
-            let mut t = d.as_secs();
-            let s = t % 60;
-            t /= 60;
-            let m = t % 60;
-            let h = t / 60;
-            return (h, m, s, ms)
-        }
-        let (sh, sm, ss, sms) = h_m_s_ms(self.start); // start time
-        let (eh, em ,es, ems) = h_m_s_ms(self.end); // end time
-        write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3} --> {:0>2}:{:0>2}:{:0>2},{:0>3}",
-               sh, sm, ss, sms, eh, em, es, ems)
-            
+        Times{start: Time::new(), end: Time::new()}
     }
 }
 
@@ -84,31 +73,130 @@ impl Sub for Times {
     #[inline]
     fn sub(self, rhs: Times) -> Times {
         Times{
-            start: if self.start.gt(&rhs.start) {
-                self.start.sub(rhs.start)
-            } else {
-                Duration::new(0,0)
-            },
-            end: if self.end.gt(&rhs.end) {
-                self.end.sub(rhs.end)
-            } else {
-                Duration::new(0,0)
-            }
+            start: self.start.sub(rhs.start),
+            end: self.end.sub(rhs.end),
         }
     }
 }
 
-/// single subtitle block
-#[derive(Debug, Clone)]
-pub struct Block {
-    pub times: Times,
-    pub content: String,
+impl From<Duration> for Times {
+    #[inline]
+    fn from(d: Duration) -> Times {
+        Times{start: Time::from(d), end: Time::from(d)}
+    }
 }
 
-impl Display for Block {
+impl From<Time> for Times {
     #[inline]
+    fn from(t: Time) -> Times {
+        Times{start: t, end: t}
+    }
+}
+
+impl FromStr for Times {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Times, ParseError> {
+        let buf: Vec<Time> = s.splitn(2, " --> ")
+            .filter_map(|s| Time::from_str(s).ok())
+            .collect();
+
+        if buf.len() != 2 {
+            return Err(ParseError::InvalidTimeLine);
+        }
+
+        return Ok(Times{
+            start: buf[0],
+            end: buf[1],
+        });
+    }
+}
+
+impl Display for Times {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}\n{}\n", self.times, self.content)    
+        write!(f, "{} --> {}", self.start, self.end)
+    }
+}
+
+/// start or end time of a Block
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Time(std::time::Duration);
+
+impl Time {
+    #[inline]
+    fn new() -> Time {
+        Time(Duration::new(0, 0))
+    }
+}
+
+impl Add for Time {
+    type Output = Time;
+    #[inline]
+    fn add(self, rhs: Time) -> Time {
+        Time(self.0.add(rhs.0))
+    }
+}
+
+impl Sub for Time {
+    type Output = Time;
+    #[inline]
+    fn sub(self, rhs: Time) -> Time {
+        if self.gt(&rhs) {
+            Time(self.0.sub(rhs.0))
+        } else {
+            Time(Duration::new(0,0))
+        }
+    }
+}
+
+impl From<Duration> for Time {
+    #[inline]
+    fn from(d: Duration) -> Time {
+        Time(d)
+    }
+}
+
+impl From<Time> for Duration {
+    #[inline]
+    fn from(t: Time) -> Duration {
+        t.0
+    }
+}
+
+impl From<(usize, usize, usize, usize)> for Time {
+    #[inline]
+    fn from(h_m_s_ms: (usize, usize, usize, usize)) -> Time {
+        let (h, m ,s ,ms) = h_m_s_ms;
+        Time(Duration::new((h * 60 * 60 + m * 60 +s) as u64,
+                           ms as u32 * 1_000_000))
+    }
+}
+
+/// parses a &str to a Time where &str is "HH:MM:SS,ms"
+impl FromStr for Time {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Time, ParseError> {
+        let buf: Vec<usize> = s.splitn(2, ",")
+            .flat_map(|s| s.splitn(3, ":"))
+            .filter_map(|s| s.parse::<usize>().ok())
+            .collect();
+
+        if buf.len() != 4 {
+            return Err(ParseError::InvalidTimeString);
+        }
+
+        return Ok(Time::from((buf[0], buf[1], buf[2], buf[3])))
+    }
+}
+
+impl Display for Time {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let ms = self.0.subsec_nanos() / 1_000_000;
+        let mut t = self.0.as_secs();
+        let s = t % 60;
+        t /= 60;
+        let m = t % 60;
+        let h = t / 60;
+        write!(f, "{:0>2}:{:0>2}:{:0>2},{:0>3}", h, m, s, ms)
     }
 }
 
@@ -145,7 +233,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
         let time =
             if let Some(Ok(tl)) = self.buf.next() {
                 self.line += 1;
-                match parse_time_line(&tl) {
+                match Times::from_str(&tl) {
                     Ok(time) => time,
                     Err(e) => return Some(Err(e)),
                 }
@@ -168,25 +256,6 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
         }
         return Some(Ok(Block{times: time, content: content}))
     }
-}
-
-#[inline]
-fn is_idx(s: &str) -> bool {
-    match s.parse::<u64>() {
-        Ok(_) => true,
-        Err(_) => false,
-    }
-}
-
-fn parse_time_line(s: &str) -> Result<Times, ParseError> {
-    let ts: Vec<&str> = s.splitn(2, " --> ").collect();
-    if ts.len() != 2 {
-        return Err(ParseError::InvalidTimeLine);
-    }
-    Ok(Times{
-        start: try!(dur_from_str(ts[0])),
-        end: try!(dur_from_str(ts[1])),
-    })
 }
 
 #[derive(Debug)]
@@ -221,22 +290,10 @@ impl Error for ParseError {
     }
 }
 
-/// Parse a &str with the format "HH:MM:SS:sss" to a Duration
-pub fn dur_from_str(s: &str) -> Result<Duration, ParseError> {
-    let buf: Vec<u64> = s.splitn(2, ",")
-        .flat_map(|s| s.splitn(3, ":"))
-        .filter_map(|s| s.parse::<u64>().ok())
-        .collect();
-    if buf.len() != 4 {
-        return Err(ParseError::InvalidTimeString);
-    }
-    return Ok(dur(buf[0], buf[1], buf[2], buf[3] as u32))
-}
-
 #[inline]
-fn dur(h: u64, m: u64, s: u64, ms: u32) -> Duration {
-    Duration::new(h * 60 * 60
-                  +m * 60
-                  +s,
-                  ms * 1_000_000)
+fn is_idx(s: &str) -> bool {
+    match s.parse::<u64>() {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }

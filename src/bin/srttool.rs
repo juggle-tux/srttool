@@ -25,8 +25,9 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::ops::{Add, Sub};
+use std::str::FromStr;
 use clap::{App, Arg, ArgMatches};
-use srt::{Block, BlockReader, Times};
+use srt::{Block, BlockReader, Time, Times};
 
 macro_rules! println_stderr{
     ($($arg:tt)*) => {
@@ -59,10 +60,10 @@ fn main() {
     let (offset, neg) =
         if let Some(o) = cmd.value_of("offset") {
             if o.starts_with('n') {
-                let d = &trye!(srt::dur_from_str(o.trim_left_matches('n')));
+                let d = trye!(Time::from_str(o.trim_left_matches('n')));
                 (Times::from(d), true)
             } else {
-                (Times::from(&trye!(srt::dur_from_str(o))), false)
+                (Times::from(trye!(Time::from_str(o))), false)
             }
         } else { (Times::new(), false) };
     let add_offset_to =
@@ -73,11 +74,11 @@ fn main() {
                 b.times.add(offset)
             }
         };
-    let mut outfile: Box<Write> =
+    let mut outfile: BufWriter<Box<Write>> =
         if let Some(p) = cmd.value_of("outfile") {
-            Box::new(BufWriter::new(trye!(File::create(p))))
+            BufWriter::new(Box::new(trye!(File::create(p))))
         } else {
-            Box::new(io::stdout())
+            BufWriter::new(Box::new(io::stdout()))
         };
     
     let mut i = 0;
