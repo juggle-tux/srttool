@@ -23,7 +23,6 @@ extern crate srt;
 
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
-use std::ops::{Add, Sub};
 use std::str::FromStr;
 use clap::{App, Arg, ArgMatches};
 use srt::{Block, BlockReader, Time, Times};
@@ -59,18 +58,17 @@ fn main() {
     let (offset, neg) =
         if let Some(o) = cmd.value_of("offset") {
             if o.starts_with('n') {
-                let d = trye!(Time::from_str(o.trim_left_matches('n')));
-                (Times::from(d), true)
+                (trye!(Time::from_str(o.trim_left_matches('n'))), true)
             } else {
-                (Times::from(trye!(Time::from_str(o))), false)
+                (trye!(Time::from_str(o)), false)
             }
-        } else { (Times::new(), false) };
+        } else { (Time::new(), false) };
     let add_offset_to =
         |b: &Block| -> Times {
             if neg {
-                b.times.sub(offset)
+                b.times - offset
             } else {
-                b.times.add(offset)
+                b.times + offset
             }
         };
     let mut outfile: BufWriter<Box<Write>> =

@@ -20,11 +20,9 @@ along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 
 extern crate srt;
 
-//use std::io::prelude::*;
 use std::io::Cursor;
 use srt::*;
 use std::time::Duration;
-use std::ops::Add;
 use std::str::FromStr;
 
 const BLOCK: &'static [u8] = b"1\n00:00:22,280 --> 00:00:34,090\nNORIKO'S DINNER TABLE\n\n";
@@ -33,16 +31,16 @@ const BLOCK: &'static [u8] = b"1\n00:00:22,280 --> 00:00:34,090\nNORIKO'S DINNER
 fn parse_time() {
     let d = match Time::from_str("01:02:03,456") {
         Ok(d) => {
-            assert_eq!(Time::from(Duration::new(3723, 456000000)), d);
+            assert_eq!(Duration::new(3723, 456_000_000), Duration::from(d));
             d
         }
         Err(e) => panic!(e),
     };
     let mut t = Times::from(d);
-    t.end = t.end.add(Time::from_str("6:5:4,321").unwrap());
+    t.end = t.end + Time::from_str("6:5:4,321").unwrap();
     assert_eq!(format!("{}",t), "01:02:03,456 --> 07:07:07,777");
 
-    t = Times::new() - t;
+    t = Times::new() - d;
     assert_eq!(format!("{}", t), "00:00:00,000 --> 00:00:00,000");
 }
 

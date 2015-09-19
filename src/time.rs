@@ -43,12 +43,30 @@ impl Times {
 
 impl Add for Times {
     type Output = Times;
-
     #[inline]
     fn add(self, rhs: Times) -> Times {
         Times{
-            start: self.start.add(rhs.start),
-            end: self.end.add(rhs.end),
+            start: self.start + rhs.start,
+            end: self.end + rhs.end,
+        }
+    }
+}
+
+impl Add<Time> for Times {
+    type Output = Times;
+    #[inline]
+    fn add(self, rhs: Time) -> Times {
+        self + rhs.0
+    }
+}
+
+impl Add<Duration> for Times {
+    type Output = Times;
+    #[inline]
+    fn add(self, rhs: Duration) -> Times {
+        Times{
+            start: self.start + rhs,
+            end: self.end + rhs,
         }
     }
 }
@@ -59,8 +77,27 @@ impl Sub for Times {
     #[inline]
     fn sub(self, rhs: Times) -> Times {
         Times{
-            start: self.start.sub(rhs.start),
-            end: self.end.sub(rhs.end),
+            start: self.start - rhs.start,
+            end: self.end - rhs.end,
+        }
+    }
+}
+
+impl Sub<Time> for Times {
+    type Output = Times;
+    #[inline]
+    fn sub(self, rhs: Time) -> Times {
+        self - rhs.0
+    }
+}
+
+impl Sub<Duration> for Times {
+    type Output = Times;
+    #[inline]
+    fn sub(self, rhs: Duration) -> Times {
+        Times{
+            start: self.start - rhs,
+            end: self.end - rhs,
         }
     }
 }
@@ -109,7 +146,7 @@ pub struct Time(Duration);
 
 impl Time {
     #[inline]
-    fn new() -> Time {
+    pub fn new() -> Time {
         Time(Duration::new(0, 0))
     }
 }
@@ -118,7 +155,15 @@ impl Add for Time {
     type Output = Time;
     #[inline]
     fn add(self, rhs: Time) -> Time {
-        Time(self.0.add(rhs.0))
+        self + rhs.0
+    }
+}
+
+impl Add<Duration> for Time {
+    type Output = Time;
+    #[inline]
+    fn add(self, rhs: Duration) -> Time {
+        Time(self.0 + rhs)
     }
 }
 
@@ -126,10 +171,18 @@ impl Sub for Time {
     type Output = Time;
     #[inline]
     fn sub(self, rhs: Time) -> Time {
-        if self.gt(&rhs) {
-            Time(self.0.sub(rhs.0))
+        self - rhs.0
+    }
+}
+
+impl Sub<Duration> for Time {
+    type Output = Time;
+    #[inline]
+    fn sub(self, rhs: Duration) -> Time {
+        if self.0.gt(&rhs) {
+            Time(self.0 - rhs)
         } else {
-            Time(Duration::new(0,0))
+            Time::new()
         }
     }
 }
@@ -163,11 +216,11 @@ impl FromStr for Time {
     fn from_str(s: &str) -> Result<Time, ParseError> {
         let buf: Vec<usize> = s.splitn(2, ",")
             .flat_map(|s| s.splitn(3, ":"))
-            .filter_map(|s| s.parse::<usize>().ok())
+            .filter_map(|s| s.parse().ok())
             .collect();
 
         if buf.len() != 4 {
-            return Err(ParseError::InvalidTimeString);
+             return Err(ParseError::InvalidTimeString);
         }
 
         return Ok(Time::from((buf[0], buf[1], buf[2], buf[3])))
