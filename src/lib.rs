@@ -25,7 +25,7 @@ use std::time::Duration;
 use std::ops::{Add, Sub};
 
 pub use self::error::ParseError;
-pub use self::time::{Time, Times};
+pub use self::time::{Time, StartEnd};
 
 mod error;
 mod time;
@@ -33,15 +33,15 @@ mod time;
 /// single subtitle block
 #[derive(Debug, Clone)]
 pub struct Block {
-    pub times: Times,
+    pub start_end: StartEnd,
     pub content: String,
 }
 
-impl Add<Times> for Block {
+impl Add<StartEnd> for Block {
     type Output = Block;
-    fn add(self, rhs: Times) -> Block {
+    fn add(self, rhs: StartEnd) -> Block {
         return Block{
-            times: self.times + rhs,
+            start_end: self.start_end + rhs,
             content: self.content,
         }
     }
@@ -51,7 +51,7 @@ impl Add<Time> for Block {
     type Output = Block;
     fn add(self, rhs: Time) -> Block {
         return Block{
-            times: self.times + rhs,
+            start_end: self.start_end + rhs,
             content: self.content,
         }
     }
@@ -61,17 +61,17 @@ impl Add<Duration> for Block {
     type Output = Block;
     fn add(self, rhs: Duration) -> Block {
         return Block{
-            times: self.times + rhs,
+            start_end: self.start_end + rhs,
             content: self.content,
         }
     }
 }
 
-impl Sub<Times> for Block {
+impl Sub<StartEnd> for Block {
     type Output = Block;
-    fn sub(self, rhs: Times) -> Block {
+    fn sub(self, rhs: StartEnd) -> Block {
         return Block{
-            times: self.times - rhs,
+            start_end: self.start_end - rhs,
             content: self.content,
         }
     }
@@ -81,7 +81,7 @@ impl Sub<Time> for Block {
     type Output = Block;
     fn sub(self, rhs: Time) -> Block {
         return Block{
-            times: self.times - rhs,
+            start_end: self.start_end - rhs,
             content: self.content,
         }
     }
@@ -91,7 +91,7 @@ impl Sub<Duration> for Block {
     type Output = Block;
     fn sub(self, rhs: Duration) -> Block {
         return Block{
-            times: self.times - rhs,
+            start_end: self.start_end - rhs,
             content: self.content,
         }
     }
@@ -99,7 +99,7 @@ impl Sub<Duration> for Block {
 
 impl Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}\n{}\n", self.times, self.content)
+        write!(f, "{}\n{}\n", self.start_end, self.content)
     }
 }
 
@@ -135,7 +135,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
         let time =
             if let Some(Ok(tl)) = self.buf.next() {
                 self.line += 1;
-                match Times::from_str(&tl) {
+                match StartEnd::from_str(&tl) {
                     Ok(time) => time,
                     Err(e) => return Some(Err(e)),
                 }
@@ -156,7 +156,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
                 }
             }
         }
-        return Some(Ok(Block{times: time, content: content}))
+        return Some(Ok(Block{start_end: time, content: content}))
     }
 }
 

@@ -29,86 +29,83 @@ use error::ParseError;
 
 /// start and end time of a Block
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Times {
-    pub start: Time,
-    pub end: Time,
-}
+pub struct StartEnd (pub Time, pub Time);
 
-impl Times {
-    pub fn new() -> Times {
-        Times{start: Time::new(), end: Time::new()}
+impl StartEnd {
+    pub fn new() ->  StartEnd {
+         StartEnd(Time::new(), Time::new())
     }
 }
 
-impl Add for Times {
-    type Output = Times;
-    fn add(self, rhs: Times) -> Times {
-        Times{
-            start: self.start + rhs.start,
-            end: self.end + rhs.end,
-        }
+impl Add for  StartEnd {
+    type Output =  StartEnd;
+    fn add(self, rhs:  StartEnd) ->  StartEnd {
+         StartEnd(
+            self.0 + rhs.0,
+            self.1 + rhs.1,
+        )
     }
 }
 
-impl Add<Time> for Times {
-    type Output = Times;
-    fn add(self, rhs: Time) -> Times {
+impl Add<Time> for  StartEnd {
+    type Output =  StartEnd;
+    fn add(self, rhs: Time) ->  StartEnd {
         self + rhs.0
     }
 }
 
-impl Add<Duration> for Times {
-    type Output = Times;
-    fn add(self, rhs: Duration) -> Times {
-        Times{
-            start: self.start + rhs,
-            end: self.end + rhs,
-        }
+impl Add<Duration> for  StartEnd {
+    type Output =  StartEnd;
+    fn add(self, rhs: Duration) ->  StartEnd {
+         StartEnd(
+            self.0 + rhs,
+            self.1 + rhs,
+        )
     }
 }
 
-impl Sub for Times {
-    type Output = Times;
-    fn sub(self, rhs: Times) -> Times {
-        Times{
-            start: self.start - rhs.start,
-            end: self.end - rhs.end,
-        }
+impl Sub for  StartEnd {
+    type Output =  StartEnd;
+    fn sub(self, rhs:  StartEnd) ->  StartEnd {
+         StartEnd(
+            self.0 - rhs.0,
+            self.1 - rhs.1,
+        )
     }
 }
 
-impl Sub<Time> for Times {
-    type Output = Times;
-    fn sub(self, rhs: Time) -> Times {
+impl Sub<Time> for  StartEnd {
+    type Output =  StartEnd;
+    fn sub(self, rhs: Time) ->  StartEnd {
         self - rhs.0
     }
 }
 
-impl Sub<Duration> for Times {
-    type Output = Times;
-    fn sub(self, rhs: Duration) -> Times {
-        Times{
-            start: self.start - rhs,
-            end: self.end - rhs,
-        }
+impl Sub<Duration> for  StartEnd {
+    type Output =  StartEnd;
+    fn sub(self, rhs: Duration) ->  StartEnd {
+         StartEnd(
+             self.0 - rhs,
+            self.1 - rhs,
+        )
     }
 }
 
-impl From<Duration> for Times {
-    fn from(d: Duration) -> Times {
-        Times{start: Time::from(d), end: Time::from(d)}
+impl From<Duration> for  StartEnd {
+    fn from(d: Duration) ->  StartEnd {
+         StartEnd(Time::from(d),Time::from(d))
     }
 }
 
-impl From<Time> for Times {
-    fn from(t: Time) -> Times {
-        Times{start: t, end: t}
+impl From<Time> for  StartEnd {
+    fn from(t: Time) ->  StartEnd {
+         StartEnd(t,t)
     }
 }
 
-impl FromStr for Times {
+impl FromStr for  StartEnd {
     type Err = ParseError;
-    fn from_str(s: &str) -> Result<Times, ParseError> {
+    fn from_str(s: &str) -> Result< StartEnd, ParseError> {
         let buf: Vec<_> = s.splitn(2, " --> ")
             .filter_map(|s| Time::from_str(s).ok())
             .collect();
@@ -117,16 +114,13 @@ impl FromStr for Times {
             return Err(ParseError::InvalidTimeLine);
         }
 
-        return Ok(Times{
-            start: buf[0],
-            end: buf[1],
-        });
+        return Ok( StartEnd(buf[0], buf[1]));
     }
 }
 
-impl Display for Times {
+impl Display for  StartEnd {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{} --> {}", self.start, self.end)
+        write!(f, "{} --> {}", self.0, self.1)
     }
 }
 
