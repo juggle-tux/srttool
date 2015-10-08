@@ -25,7 +25,7 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::str::FromStr;
 use clap::{App, Arg, ArgMatches};
-use srt::{Block, BlockReader, Time, Times};
+use srt::{BlockReader, Time};
 
 macro_rules! println_stderr{
     ($($arg:tt)*) => {
@@ -63,14 +63,10 @@ fn main() {
                 (trye!(Time::from_str(o)), false)
             }
         } else { (Time::new(), false) };
-    let add_offset_to =
-        |b: &Block| -> Times {
-            if neg {
-                b.times - offset
-            } else {
-                b.times + offset
-            }
-        };
+    let add_offset_to = |b| {
+        if neg { b - offset }
+        else { b + offset }};
+
     let mut outfile: BufWriter<Box<Write>> =
         if let Some(p) = cmd.value_of("outfile") {
             BufWriter::new(Box::new(trye!(File::create(p))))
@@ -80,14 +76,10 @@ fn main() {
     
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {
-        let mut infile = BlockReader::new(BufReader::new(trye!(File::open(path))));
-        while let Some(b) = infile.next() {
-            let mut b = trye!(b);
-            b.times = add_offset_to(&b);
+        for b in BlockReader::new(BufReader::new(trye!(File::open(path)))) {
             i += 1;
-            trye!(write!(&mut outfile, "{}\n{}", i, b))
+            trye!(write!(&mut outfile, "{}\n{}", i, add_offset_to(trye!(b))))
         }
-        println_stderr!("from \"{}\" {} lines parsed", path, infile.line)
     }
     trye!(outfile.flush())
 }

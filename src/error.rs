@@ -43,7 +43,6 @@ impl Display for ParseError {
 }
 
 impl Error for ParseError {
-    #[inline]
     fn description(&self) -> &'static str {
         match *self {
             ParseError::InvalidIndex => "Invalid index",

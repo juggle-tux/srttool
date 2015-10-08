@@ -35,7 +35,6 @@ pub struct Times {
 }
 
 impl Times {
-    #[inline]
     pub fn new() -> Times {
         Times{start: Time::new(), end: Time::new()}
     }
@@ -43,7 +42,6 @@ impl Times {
 
 impl Add for Times {
     type Output = Times;
-    #[inline]
     fn add(self, rhs: Times) -> Times {
         Times{
             start: self.start + rhs.start,
@@ -54,7 +52,6 @@ impl Add for Times {
 
 impl Add<Time> for Times {
     type Output = Times;
-    #[inline]
     fn add(self, rhs: Time) -> Times {
         self + rhs.0
     }
@@ -62,7 +59,6 @@ impl Add<Time> for Times {
 
 impl Add<Duration> for Times {
     type Output = Times;
-    #[inline]
     fn add(self, rhs: Duration) -> Times {
         Times{
             start: self.start + rhs,
@@ -73,8 +69,6 @@ impl Add<Duration> for Times {
 
 impl Sub for Times {
     type Output = Times;
-
-    #[inline]
     fn sub(self, rhs: Times) -> Times {
         Times{
             start: self.start - rhs.start,
@@ -85,7 +79,6 @@ impl Sub for Times {
 
 impl Sub<Time> for Times {
     type Output = Times;
-    #[inline]
     fn sub(self, rhs: Time) -> Times {
         self - rhs.0
     }
@@ -93,7 +86,6 @@ impl Sub<Time> for Times {
 
 impl Sub<Duration> for Times {
     type Output = Times;
-    #[inline]
     fn sub(self, rhs: Duration) -> Times {
         Times{
             start: self.start - rhs,
@@ -103,14 +95,12 @@ impl Sub<Duration> for Times {
 }
 
 impl From<Duration> for Times {
-    #[inline]
     fn from(d: Duration) -> Times {
         Times{start: Time::from(d), end: Time::from(d)}
     }
 }
 
 impl From<Time> for Times {
-    #[inline]
     fn from(t: Time) -> Times {
         Times{start: t, end: t}
     }
@@ -119,7 +109,7 @@ impl From<Time> for Times {
 impl FromStr for Times {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Times, ParseError> {
-        let buf: Vec<Time> = s.splitn(2, " --> ")
+        let buf: Vec<_> = s.splitn(2, " --> ")
             .filter_map(|s| Time::from_str(s).ok())
             .collect();
 
@@ -145,7 +135,6 @@ impl Display for Times {
 pub struct Time(Duration);
 
 impl Time {
-    #[inline]
     pub fn new() -> Time {
         Time(Duration::new(0, 0))
     }
@@ -153,7 +142,6 @@ impl Time {
 
 impl Add for Time {
     type Output = Time;
-    #[inline]
     fn add(self, rhs: Time) -> Time {
         self + rhs.0
     }
@@ -161,7 +149,6 @@ impl Add for Time {
 
 impl Add<Duration> for Time {
     type Output = Time;
-    #[inline]
     fn add(self, rhs: Duration) -> Time {
         Time(self.0 + rhs)
     }
@@ -169,7 +156,6 @@ impl Add<Duration> for Time {
 
 impl Sub for Time {
     type Output = Time;
-    #[inline]
     fn sub(self, rhs: Time) -> Time {
         self - rhs.0
     }
@@ -177,7 +163,6 @@ impl Sub for Time {
 
 impl Sub<Duration> for Time {
     type Output = Time;
-    #[inline]
     fn sub(self, rhs: Duration) -> Time {
         if self.0.gt(&rhs) {
             Time(self.0 - rhs)
@@ -188,24 +173,21 @@ impl Sub<Duration> for Time {
 }
 
 impl From<Duration> for Time {
-    #[inline]
     fn from(d: Duration) -> Time {
         Time(d)
     }
 }
 
 impl From<Time> for Duration {
-    #[inline]
     fn from(t: Time) -> Duration {
         t.0
     }
 }
 
 impl From<(usize, usize, usize, usize)> for Time {
-    #[inline]
     fn from(h_m_s_ms: (usize, usize, usize, usize)) -> Time {
         let (h, m ,s ,ms) = h_m_s_ms;
-        Time(Duration::new((h * 60 * 60 + m * 60 +s) as u64,
+        Time(Duration::new(h as u64 * 60 * 60 + m as u64 * 60 + s as u64,
                            ms as u32 * 1_000_000))
     }
 }

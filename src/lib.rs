@@ -21,12 +21,14 @@ use std::error::Error;
 use std::fmt::{self, Display};
 use std::io::{Lines, BufRead};
 use std::str::FromStr;
+use std::time::Duration;
+use std::ops::{Add, Sub};
 
-mod time;
-pub use time::{Time, Times};
+pub use self::error::ParseError;
+pub use self::time::{Time, Times};
 
 mod error;
-pub use error::ParseError;
+mod time;
 
 /// single subtitle block
 #[derive(Debug, Clone)]
@@ -35,8 +37,67 @@ pub struct Block {
     pub content: String,
 }
 
+impl Add<Times> for Block {
+    type Output = Block;
+    fn add(self, rhs: Times) -> Block {
+        return Block{
+            times: self.times + rhs,
+            content: self.content,
+        }
+    }
+}
+
+impl Add<Time> for Block {
+    type Output = Block;
+    fn add(self, rhs: Time) -> Block {
+        return Block{
+            times: self.times + rhs,
+            content: self.content,
+        }
+    }
+}
+
+impl Add<Duration> for Block {
+    type Output = Block;
+    fn add(self, rhs: Duration) -> Block {
+        return Block{
+            times: self.times + rhs,
+            content: self.content,
+        }
+    }
+}
+
+impl Sub<Times> for Block {
+    type Output = Block;
+    fn sub(self, rhs: Times) -> Block {
+        return Block{
+            times: self.times - rhs,
+            content: self.content,
+        }
+    }
+}
+
+impl Sub<Time> for Block {
+    type Output = Block;
+    fn sub(self, rhs: Time) -> Block {
+        return Block{
+            times: self.times - rhs,
+            content: self.content,
+        }
+    }
+}
+
+impl Sub<Duration> for Block {
+    type Output = Block;
+    fn sub(self, rhs: Duration) -> Block {
+        return Block{
+            times: self.times - rhs,
+            content: self.content,
+        }
+    }
+}
+
 impl Display for Block {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}\n{}\n", self.times, self.content)
     }
@@ -49,7 +110,6 @@ pub struct BlockReader<B> {
 }
 
 impl<B: BufRead> BlockReader<B> {
-    #[inline]
     pub fn new(buf: B) -> BlockReader<B> {
         BlockReader{buf: buf.lines(), line: 0}
     }
@@ -83,7 +143,7 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
                 return Some(Err(ParseError::InvalidTimeString))
             };
 
-        let mut content = String::new();
+        let mut content = String::with_capacity(128);
         while let Some(text) = self.buf.next() {
             self.line += 1;
             match text {
@@ -100,7 +160,6 @@ impl<B: BufRead> Iterator for  BlockReader<B> {
     }
 }
 
-#[inline]
 fn is_idx(s: &str) -> bool {
     match s.parse::<u64>() {
         Ok(_) => true,
