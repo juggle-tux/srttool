@@ -1,0 +1,13 @@
+language: rust
+rust:
+- nightly
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  cargo doc &&
+  echo '<meta http-equiv=refresh content=0;url=imagefile/index.html>' > target/doc/index.html &&
+  pip install --user ghp-import &&
+  ghp-import -n target/doc &&
+  mkdir ~/.ssh &&
+  openssl aes-256-cbc -K $encrypted_a41cb2229a31_key -iv $encrypted_a41cb2229a31_iv -in .ssh/id_rsa.enc -out ~/.ssh/id_rsa -d &&
+  git push -fq git@github.com:${TRAVIS_REPO_SLUG}.git gh-pages
