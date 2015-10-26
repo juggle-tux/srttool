@@ -1,6 +1,4 @@
-/*
-Copyright 2015 juggle-tux
-
+/* Copyright 2015 juggle-tux
 This file is part of srttool.
 
 srttool is free software: you can redistribute it and/or modify
@@ -16,6 +14,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with srttool.  If not, see <http://www.gnu.org/licenses/>.
 */
+//! reads and writes srt subtitles
+
+#![deny(unsafe_code)]
+#![deny(trivial_casts, trivial_numeric_casts)]
+#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations)]
+#![deny(unused_extern_crates, unused_import_braces, unused_qualifications)]
 
 use std::error::Error;
 use std::fmt::{self, Display};
@@ -33,7 +37,11 @@ mod time;
 /// single subtitle block
 #[derive(Debug, Clone)]
 pub struct Block {
+
+    /// start and end time of the block
     pub start_end: StartEnd,
+
+    /// text content
     pub content: String,
 }
 
@@ -106,10 +114,19 @@ impl Display for Block {
 /// a BlockReader
 pub struct BlockReader<B> {
     buf: Lines<B>,
+
+    /// last line read
     pub line: u64,
 }
 
+impl<B> fmt::Debug for BlockReader<B> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "Reader at line {}", self.line)
+    }
+}
+
 impl<B: BufRead> BlockReader<B> {
+    /// Create a BlockReader with `buf`
     pub fn new(buf: B) -> BlockReader<B> {
         BlockReader{buf: buf.lines(), line: 0}
     }

@@ -40,7 +40,7 @@ fn parse_time() {
     t.1 = t.1 + Time::from_str("6:5:4,321").unwrap();
     assert_eq!(format!("{}",t), "01:02:03,456 --> 07:07:07,777");
 
-    t = StartEnd::new() - d;
+    t = StartEnd::default() - d;
     assert_eq!(format!("{}", t), "00:00:00,000 --> 00:00:00,000");
 }
 

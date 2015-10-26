@@ -28,14 +28,8 @@ use std::time::Duration;
 use error::ParseError;
 
 /// start and end time of a Block
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StartEnd (pub Time, pub Time);
-
-impl StartEnd {
-    pub fn new() ->  StartEnd {
-         StartEnd(Time::new(), Time::new())
-    }
-}
 
 impl Add for  StartEnd {
     type Output =  StartEnd;
@@ -124,12 +118,12 @@ impl Display for  StartEnd {
     }
 }
 
-/// start or end time of a Block
+/// used for the start or end time of a Block
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Time(Duration);
+pub struct Time(pub Duration);
 
-impl Time {
-    pub fn new() -> Time {
+impl Default for Time {
+    fn default() -> Time {
         Time(Duration::new(0, 0))
     }
 }
@@ -161,7 +155,7 @@ impl Sub<Duration> for Time {
         if self.0.gt(&rhs) {
             Time(self.0 - rhs)
         } else {
-            Time::new()
+            Time::default()
         }
     }
 }

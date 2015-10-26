@@ -22,11 +22,19 @@ use std::error::Error;
 use std::fmt::{self, Display};
 use std::num::ParseIntError;
 
-#[derive(Debug)]
+/// Parsing errors
+#[derive(Debug, Copy, Clone)]
 pub enum ParseError {
+    /// The time is not formatted properly
     InvalidTimeString,
+
+    /// The line with the times is not formatted properly
     InvalidTimeLine,
+
+    /// The index ist not a integer
     InvalidIndex,
+
+    /// A error while reading the content
     InvalidContent,
 }
 

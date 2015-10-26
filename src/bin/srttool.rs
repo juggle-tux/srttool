@@ -62,7 +62,7 @@ fn main() {
             } else {
                 (trye!(Time::from_str(o)), false)
             }
-        } else { (Time::new(), false) };
+        } else { (Time::default(), false) };
     let add_offset_to = |b| {
         if neg { b - offset }
         else { b + offset }};
@@ -76,10 +76,12 @@ fn main() {
     
     let mut i = 0;
     for path in cmd.values_of("infile").expect("Input file is required") {
-        for b in BlockReader::new(BufReader::new(trye!(File::open(path)))) {
+        let mut dec = BlockReader::new(BufReader::new(trye!(File::open(path))));
+        for b in dec.by_ref() {
             i += 1;
             trye!(write!(&mut outfile, "{}\n{}", i, add_offset_to(trye!(b))))
         }
+        println_stderr!("{} lines in {:?} parsed", dec.line, path)
     }
     trye!(outfile.flush())
 }
