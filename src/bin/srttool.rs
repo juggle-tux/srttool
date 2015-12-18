@@ -81,7 +81,7 @@ fn main() {
             i += 1;
             trye!(write!(&mut outfile, "{}\n{}", i, add_offset_to(trye!(b))))
         }
-        println_stderr!("{} lines in {:?} parsed", dec.line, path)
+        println_stderr!("{} lines in {:?} parsed", dec.line(), path)
     }
     trye!(outfile.flush())
 }

@@ -116,7 +116,14 @@ pub struct BlockReader<B> {
     buf: Lines<B>,
 
     /// last line read
-    pub line: u64,
+    line: u64,
+}
+
+impl<B> BlockReader<B> {
+    /// returns the line number of the last line readed
+    pub fn line(&self) -> u64 {
+        self.line
+    }
 }
 
 impl<B> fmt::Debug for BlockReader<B> {
