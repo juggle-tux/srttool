@@ -90,9 +90,9 @@ fn main() {
 }
 
 
-fn parse_cmd<'a, 'b>() -> ArgMatches<'a, 'b> {
+fn parse_cmd<'a>() -> ArgMatches<'a> {
     App::new("srttool")
-        .version("0.0.1")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Juggle Tux <juggle-tux@users.noreply.github.com>")
         .about("readjust the timing in a srt subtitle file")
         .arg(Arg::with_name("infile")

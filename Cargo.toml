@@ -6,7 +6,7 @@ authors = ["tux <juggle-tux@users.noreply.github.com>"]
 
 [dependencies]
 
-clap = "*"
+clap = "2.*"
 
 
 [profile.release]
