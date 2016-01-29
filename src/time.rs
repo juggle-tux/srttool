@@ -1,21 +1,20 @@
-/*
-Copyright 2015 juggle-tux
-
-This file is part of srttool.
-
-srttool is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-srttool is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with srttool.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2015 juggle-tux
+//
+// This file is part of srttool.
+//
+// srttool is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// srttool is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with srttool.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 use std::cmp::Eq;
 use std::convert::From;
@@ -29,90 +28,78 @@ use error::ParseError;
 
 /// start and end time of a Block
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct StartEnd (pub Time, pub Time);
+pub struct StartEnd(pub Time, pub Time);
 
-impl Add for  StartEnd {
+impl Add for StartEnd {
     type Output =  StartEnd;
-    fn add(self, rhs:  StartEnd) ->  StartEnd {
-         StartEnd(
-            self.0 + rhs.0,
-            self.1 + rhs.1,
-        )
+    fn add(self, rhs: StartEnd) -> StartEnd {
+        StartEnd(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 
-impl Add<Time> for  StartEnd {
+impl Add<Time> for StartEnd {
     type Output =  StartEnd;
-    fn add(self, rhs: Time) ->  StartEnd {
+    fn add(self, rhs: Time) -> StartEnd {
         self + rhs.0
     }
 }
 
-impl Add<Duration> for  StartEnd {
+impl Add<Duration> for StartEnd {
     type Output =  StartEnd;
-    fn add(self, rhs: Duration) ->  StartEnd {
-         StartEnd(
-            self.0 + rhs,
-            self.1 + rhs,
-        )
+    fn add(self, rhs: Duration) -> StartEnd {
+        StartEnd(self.0 + rhs, self.1 + rhs)
     }
 }
 
-impl Sub for  StartEnd {
+impl Sub for StartEnd {
     type Output =  StartEnd;
-    fn sub(self, rhs:  StartEnd) ->  StartEnd {
-         StartEnd(
-            self.0 - rhs.0,
-            self.1 - rhs.1,
-        )
+    fn sub(self, rhs: StartEnd) -> StartEnd {
+        StartEnd(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
 
-impl Sub<Time> for  StartEnd {
+impl Sub<Time> for StartEnd {
     type Output =  StartEnd;
-    fn sub(self, rhs: Time) ->  StartEnd {
+    fn sub(self, rhs: Time) -> StartEnd {
         self - rhs.0
     }
 }
 
-impl Sub<Duration> for  StartEnd {
+impl Sub<Duration> for StartEnd {
     type Output =  StartEnd;
-    fn sub(self, rhs: Duration) ->  StartEnd {
-         StartEnd(
-             self.0 - rhs,
-            self.1 - rhs,
-        )
+    fn sub(self, rhs: Duration) -> StartEnd {
+        StartEnd(self.0 - rhs, self.1 - rhs)
     }
 }
 
-impl From<Duration> for  StartEnd {
-    fn from(d: Duration) ->  StartEnd {
-         StartEnd(Time::from(d),Time::from(d))
+impl From<Duration> for StartEnd {
+    fn from(d: Duration) -> StartEnd {
+        StartEnd(Time::from(d), Time::from(d))
     }
 }
 
-impl From<Time> for  StartEnd {
-    fn from(t: Time) ->  StartEnd {
-         StartEnd(t,t)
+impl From<Time> for StartEnd {
+    fn from(t: Time) -> StartEnd {
+        StartEnd(t, t)
     }
 }
 
-impl FromStr for  StartEnd {
+impl FromStr for StartEnd {
     type Err = ParseError;
-    fn from_str(s: &str) -> Result< StartEnd, ParseError> {
+    fn from_str(s: &str) -> Result<StartEnd, ParseError> {
         let buf: Vec<_> = s.splitn(2, " --> ")
-            .filter_map(|s| Time::from_str(s).ok())
-            .collect();
+                           .filter_map(|s| Time::from_str(s).ok())
+                           .collect();
 
         if buf.len() != 2 {
             return Err(ParseError::InvalidTimeLine);
         }
 
-        return Ok( StartEnd(buf[0], buf[1]));
+        return Ok(StartEnd(buf[0], buf[1]));
     }
 }
 
-impl Display for  StartEnd {
+impl Display for StartEnd {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{} --> {}", self.0, self.1)
     }
@@ -174,7 +161,7 @@ impl From<Time> for Duration {
 
 impl From<(usize, usize, usize, usize)> for Time {
     fn from(h_m_s_ms: (usize, usize, usize, usize)) -> Time {
-        let (h, m ,s ,ms) = h_m_s_ms;
+        let (h, m, s, ms) = h_m_s_ms;
         Time(Duration::new(h as u64 * 60 * 60 + m as u64 * 60 + s as u64,
                            ms as u32 * 1_000_000))
     }
@@ -185,15 +172,15 @@ impl FromStr for Time {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Time, ParseError> {
         let buf: Vec<usize> = s.splitn(2, ",")
-            .flat_map(|s| s.splitn(3, ":"))
-            .filter_map(|s| s.parse().ok())
-            .collect();
+                               .flat_map(|s| s.splitn(3, ":"))
+                               .filter_map(|s| s.parse().ok())
+                               .collect();
 
         if buf.len() != 4 {
-             return Err(ParseError::InvalidTimeString);
+            return Err(ParseError::InvalidTimeString);
         }
 
-        return Ok(Time::from((buf[0], buf[1], buf[2], buf[3])))
+        return Ok(Time::from((buf[0], buf[1], buf[2], buf[3])));
     }
 }
 
