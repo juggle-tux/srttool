@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ParseError","Parsing errors"]],"struct":[["Block","single subtitle block"],["BlockReader","a BlockReader"],["StartEnd","start and end time of a Block"],["Time","used for the start or end time of a Block"]]});

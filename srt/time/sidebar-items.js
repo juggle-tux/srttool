@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["StartEnd","start and end time of a Block"],["Time","used for the start or end time of a Block"]]});

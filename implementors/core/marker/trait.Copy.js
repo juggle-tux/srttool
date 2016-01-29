@@ -1,0 +1,10 @@
+(function() {var implementors = {};
+implementors['ansi_term'] = ["impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='ansi_term/enum.Colour.html' title='ansi_term::Colour'>Colour</a>","impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='ansi_term/struct.Style.html' title='ansi_term::Style'>Style</a>",];implementors['clap'] = ["impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='clap/enum.AppSettings.html' title='clap::AppSettings'>AppSettings</a>","impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='clap/enum.ArgSettings.html' title='clap::ArgSettings'>ArgSettings</a>","impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='clap/enum.ErrorKind.html' title='clap::ErrorKind'>ErrorKind</a>",];implementors['srt'] = ["impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='enum' href='srt/enum.ParseError.html' title='srt::ParseError'>ParseError</a>","impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='srt/struct.StartEnd.html' title='srt::StartEnd'>StartEnd</a>","impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='srt/struct.Time.html' title='srt::Time'>Time</a>",];
+
+            if (window.register_implementors) {
+                window.register_implementors(implementors);
+            } else {
+                window.pending_implementors = implementors;
+            }
+        
+})()
